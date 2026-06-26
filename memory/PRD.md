@@ -26,7 +26,7 @@ React 19 + FastAPI + MongoDB. Auth: Emergent Google OAuth + 6-digit PIN fallback
 nelayan@/lapang@/admin@/dinas@demo.syncoop.id via demo quick-access.
 
 ## Backlog / Next
-- P1: Real image upload for receipt photos (object storage) instead of URL paste.
+- P1: ~~Real image upload for receipt photos~~ ✅ DONE (Emergent object storage: POST /api/upload, GET /api/files/{path} auth-gated; receipt validation now uses camera/file upload).
 - P1: Disable submit buttons while POST in-flight (prevent dup sales).
 - P2: Aggregate owner_outstanding query (avoid N+1 in /vessels).
 - P2: Lelang validation gating into main ledger; reports/export.

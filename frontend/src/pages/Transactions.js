@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, CheckCircle2, AlertTriangle, X, Camera } from "lucide-react";
-import api, { fmtRp } from "@/lib/api";
+import { Plus, CheckCircle2, AlertTriangle, X, Upload, Loader2 } from "lucide-react";
+import api, { fmtRp, BACKEND_URL } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { PageHeader, Badge, Empty } from "@/components/ui-kit";
 
@@ -16,6 +16,7 @@ export default function Transactions() {
   const [quotaAlert, setQuotaAlert] = useState(null);
   const [validateFor, setValidateFor] = useState(null);
   const [photoUrl, setPhotoUrl] = useState("");
+  const [uploading, setUploading] = useState(false);
 
   const isLapang = user.role === "PETUGAS_LAPANG" || user.role === "ADMIN";
   const isAdmin = user.role === "ADMIN";
@@ -42,6 +43,22 @@ export default function Transactions() {
       const d = e?.response?.data?.detail;
       if (d && typeof d === "object" && d.code === "QUOTA_EXCEEDED") setQuotaAlert(d);
       else alert(typeof d === "string" ? d : "Gagal mencatat transaksi");
+    }
+  };
+
+  const handleUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await api.post("/upload", fd, { headers: { "Content-Type": "multipart/form-data" } });
+      setPhotoUrl(`${BACKEND_URL}${res.data.url}`);
+    } catch {
+      alert("Gagal mengunggah foto");
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -98,7 +115,7 @@ export default function Transactions() {
                 </div>
                 <div className="text-right">
                   {!s.is_validated && (
-                    <button data-testid="validate-sale-btn" onClick={() => setValidateFor(s)}
+                    <button data-testid="validate-sale-btn" onClick={() => { setPhotoUrl(""); setValidateFor(s); }}
                       className="btn-outline px-3 py-1.5 text-sm font-semibold flex items-center gap-1 ml-auto">
                       <CheckCircle2 size={14} /> Validasi Nota
                     </button>
@@ -165,7 +182,7 @@ export default function Transactions() {
                   <p className="font-semibold text-[var(--danger)]">Kurang {fmtRp(t.remaining_balance)}</p>
                 ) : <p className="font-semibold text-[var(--ok)]">Lunas</p>}
                 {isAdmin && !t.is_validated && (
-                  <button data-testid="validate-btn" onClick={() => setValidateFor(t)}
+                  <button data-testid="validate-btn" onClick={() => { setPhotoUrl(""); setValidateFor(t); }}
                     className="mt-2 btn-outline px-3 py-1.5 text-sm font-semibold flex items-center gap-1 ml-auto">
                     <CheckCircle2 size={14} /> Validasi
                   </button>
@@ -204,17 +221,27 @@ export default function Transactions() {
       {/* Validate modal */}
       <AnimatePresence>
         {validateFor && (
-          <Overlay onClose={() => setValidateFor(null)}>
+          <Overlay onClose={() => { setValidateFor(null); setPhotoUrl(""); }}>
             <h3 className="swiss-display text-2xl">Unggah Bukti Fisik</h3>
             <p className="text-[var(--muted)] mt-2 text-sm">Foto/scan coretan kwitansi atau nota petugas lapang untuk {validateFor.sale_id ? `lelang ${validateFor.fish_name}` : `BBM ${validateFor.vessel_name}`}.</p>
-            <div className="flex items-center gap-2 mt-5">
-              <Camera size={18} />
-              <input data-testid="receipt-url" className="field tap flex-1 px-4" placeholder="https://… url foto bukti"
-                value={photoUrl} onChange={(e) => setPhotoUrl(e.target.value)} />
-            </div>
-            <button onClick={() => setPhotoUrl("https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=600")}
-              className="mono-label mt-3">gunakan contoh foto</button>
-            <button data-testid="validate-confirm" onClick={doValidate} disabled={!photoUrl}
+
+            {photoUrl ? (
+              <div className="mt-5 border hairline p-2">
+                <img src={photoUrl} alt="bukti" className="w-full h-44 object-cover" data-testid="receipt-preview" />
+              </div>
+            ) : (
+              <label data-testid="receipt-file-label" className="mt-5 border hairline border-dashed p-8 flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-[var(--lavender)] transition-colors">
+                {uploading ? <Loader2 size={26} className="animate-spin" /> : <Upload size={26} />}
+                <span className="text-sm font-semibold">{uploading ? "Mengunggah…" : "Pilih / Foto Bukti Nota"}</span>
+                <span className="mono-label">JPG / PNG</span>
+                <input data-testid="receipt-file" type="file" accept="image/*" capture="environment" className="hidden"
+                  onChange={handleUpload} disabled={uploading} />
+              </label>
+            )}
+            {photoUrl && (
+              <button onClick={() => setPhotoUrl("")} className="mono-label mt-3" data-testid="receipt-reset">ganti foto</button>
+            )}
+            <button data-testid="validate-confirm" onClick={doValidate} disabled={!photoUrl || uploading}
               className="tap btn-primary w-full mt-6 font-semibold disabled:opacity-40">Validasi & Masukkan ke Buku Besar</button>
           </Overlay>
         )}

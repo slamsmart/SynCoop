@@ -3,7 +3,10 @@ import logging
 from datetime import datetime, timezone, timedelta
 
 import requests
-from fastapi import FastAPI, APIRouter, HTTPException, Request, Response, Depends
+from fastapi import (
+    FastAPI, APIRouter, HTTPException, Request, Response, Depends,
+    UploadFile, File, Header, Query,
+)
 from starlette.middleware.cors import CORSMiddleware
 from passlib.context import CryptContext
 
@@ -11,6 +14,7 @@ from database import (
     db, users, sessions, vessels, transactions, fish_prices, fish_calcs,
     fish_sales, notifications, settings,
 )
+import storage as objstore
 from models import (
     User, PinSet, PinLogin, DemoLogin, KycSubmit, VesselCreate, Vessel,
     Transaction, TransactionCreate, ValidateTransaction, DebtReason, FishPriceCreate,
@@ -505,6 +509,61 @@ async def validate_fish_sale(sale_id: str, body: ValidateTransaction,
     return {"ok": True}
 
 
+# ----------------------------- file upload / serve -----------------------------
+MIME_TYPES = {
+    "jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png",
+    "gif": "image/gif", "webp": "image/webp", "pdf": "application/pdf",
+}
+
+
+@api.post("/upload")
+async def upload_file(file: UploadFile = File(...), user: dict = Depends(require_roles("ADMIN", "PETUGAS_LAPANG"))):
+    ext = (file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else "bin")
+    content_type = file.content_type or MIME_TYPES.get(ext, "application/octet-stream")
+    path = f"{objstore.APP_NAME}/uploads/{user['user_id']}/{gen_id('f')}.{ext}"
+    data = await file.read()
+    try:
+        result = objstore.put_object(path, data, content_type)
+    except Exception as e:
+        logger.error(f"upload failed: {e}")
+        raise HTTPException(status_code=502, detail="Gagal mengunggah file")
+    await db.files.insert_one({
+        "file_id": gen_id("file"), "storage_path": result["path"],
+        "original_filename": file.filename, "content_type": content_type,
+        "size": result.get("size", len(data)), "uploaded_by": user["user_id"],
+        "is_deleted": False, "created_at": now_utc().isoformat(),
+    })
+    return {"path": result["path"], "url": f"/api/files/{result['path']}"}
+
+
+async def _verify_token(token: str):
+    if not token:
+        return None
+    session = await sessions.find_one({"session_token": token}, {"_id": 0})
+    if not session:
+        return None
+    return session
+
+
+@api.get("/files/{path:path}")
+async def serve_file(path: str, request: Request, auth: str = Query(None)):
+    token = request.cookies.get("session_token")
+    if not token:
+        ah = request.headers.get("Authorization", "")
+        token = ah[7:] if ah.startswith("Bearer ") else None
+    token = token or auth
+    if not await _verify_token(token):
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    record = await db.files.find_one({"storage_path": path, "is_deleted": False}, {"_id": 0})
+    if not record:
+        raise HTTPException(status_code=404, detail="File tidak ditemukan")
+    try:
+        data, ctype = objstore.get_object(path)
+    except Exception:
+        raise HTTPException(status_code=404, detail="File tidak ditemukan")
+    return Response(content=data, media_type=record.get("content_type", ctype))
+
+
 # ----------------------------- notifications -----------------------------
 @api.get("/notifications")
 async def list_notifications(user: dict = Depends(get_current_user)):
@@ -652,6 +711,11 @@ async def seed():
 
 @app.on_event("startup")
 async def on_startup():
+    try:
+        objstore.init_storage()
+        logger.info("Storage initialized")
+    except Exception as e:
+        logger.error(f"Storage init failed: {e}")
     try:
         await seed()
         logger.info("Seed complete")
