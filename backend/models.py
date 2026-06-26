@@ -132,6 +132,16 @@ class ProfitSharing(BaseModel):
     profit_sharing_percent: float
 
 
+# ---------- Fish Sale / Auction (Lelang Ikan) ----------
+class FishSaleCreate(BaseModel):
+    vessel_id: str
+    fish_id: str
+    weight_kg: float
+    price_per_kg: Optional[float] = None  # auction override; defaults to market price
+    payment_method: str  # CASH / POTONG_UTANG
+    notes: Optional[str] = None
+
+
 # ---------- Admin ----------
 class RoleUpdate(BaseModel):
     role: str

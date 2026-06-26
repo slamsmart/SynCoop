@@ -10,6 +10,7 @@ import Vessels from "@/pages/Vessels";
 import Transactions from "@/pages/Transactions";
 import Debts from "@/pages/Debts";
 import Calculator from "@/pages/Calculator";
+import FishSales from "@/pages/FishSales";
 import FishPrices from "@/pages/FishPrices";
 import Users from "@/pages/Users";
 import Notifications from "@/pages/Notifications";
@@ -42,6 +43,7 @@ function AppRouter() {
         <Route path="/transactions" element={<RoleRoute roles={["PETUGAS_LAPANG", "ADMIN"]}><Transactions /></RoleRoute>} />
         <Route path="/debts" element={<Debts />} />
         <Route path="/calculator" element={<RoleRoute roles={["NELAYAN"]}><Calculator /></RoleRoute>} />
+        <Route path="/fish-sales" element={<FishSales />} />
         <Route path="/fish-prices" element={<RoleRoute roles={["ADMIN"]}><FishPrices /></RoleRoute>} />
         <Route path="/users" element={<RoleRoute roles={["ADMIN"]}><Users /></RoleRoute>} />
         <Route path="/notifications" element={<Notifications />} />

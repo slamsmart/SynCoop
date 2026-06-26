@@ -10,6 +10,7 @@ export default function Calculator() {
   const [weight, setWeight] = useState("");
   const [result, setResult] = useState(null);
   const [history, setHistory] = useState([]);
+  const [err, setErr] = useState("");
 
   const load = useCallback(() => {
     api.get("/fish-prices").then((r) => setFish(r.data)).catch(() => {});
@@ -18,11 +19,15 @@ export default function Calculator() {
   useEffect(() => { load(); }, [load]);
 
   const calc = async () => {
+    setErr("");
     try {
       const res = await api.post("/fish-calc", { fish_id: fishId, weight_kg: parseFloat(weight) });
       setResult(res.data);
       load();
-    } catch { alert("Gagal menghitung"); }
+    } catch (e) {
+      const d = e?.response?.data?.detail;
+      setErr(typeof d === "string" ? d : "Gagal menghitung. Pastikan jenis ikan & berat terisi.");
+    }
   };
 
   return (
@@ -41,6 +46,7 @@ export default function Calculator() {
           <label className="mono-label">Berat (kg)</label>
           <input data-testid="calc-weight" type="number" className="field tap w-full px-4 mt-2 mb-6" value={weight} onChange={(e) => setWeight(e.target.value)} />
           <button data-testid="calc-submit" onClick={calc} disabled={!fishId || !weight} className="tap btn-primary w-full font-semibold disabled:opacity-40">Hitung Estimasi</button>
+          {err && <p data-testid="calc-error" className="text-[var(--danger)] text-sm mt-3">{err}</p>}
         </div>
 
         <div className="bg-white p-8">

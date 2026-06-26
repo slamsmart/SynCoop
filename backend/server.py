@@ -9,12 +9,12 @@ from passlib.context import CryptContext
 
 from database import (
     db, users, sessions, vessels, transactions, fish_prices, fish_calcs,
-    notifications, settings,
+    fish_sales, notifications, settings,
 )
 from models import (
     User, PinSet, PinLogin, DemoLogin, KycSubmit, VesselCreate, Vessel,
     Transaction, TransactionCreate, ValidateTransaction, DebtReason, FishPriceCreate,
-    FishCalcRequest, ProfitSharing, RoleUpdate, now_utc, gen_id,
+    FishCalcRequest, ProfitSharing, RoleUpdate, FishSaleCreate, now_utc, gen_id,
 )
 from deps import get_current_user, require_roles
 
@@ -238,6 +238,10 @@ async def list_vessels(user: dict = Depends(get_current_user)):
     for d in docs:
         d["used_quota"] = await _vessel_used(d["vessel_id"])
         d["remaining_quota"] = max(0, d["monthly_quota_max"] - d["used_quota"])
+        owner_debts = await transactions.find(
+            {"fisherman_id": d["owner_id"], "status": "DP", "remaining_balance": {"$gt": 0}},
+            {"_id": 0, "remaining_balance": 1}).to_list(1000)
+        d["owner_outstanding"] = round(sum(x["remaining_balance"] for x in owner_debts), 2)
     return docs
 
 
@@ -414,6 +418,74 @@ async def fish_calc(body: FishCalcRequest, user: dict = Depends(get_current_user
 @api.get("/fish-calc/history")
 async def fish_calc_history(user: dict = Depends(get_current_user)):
     return await fish_calcs.find({"user_id": user["user_id"]}, {"_id": 0}).sort("created_at", -1).to_list(50)
+
+
+# ----------------------------- fish sales / auction (lelang) -----------------------------
+@api.post("/fish-sales")
+async def create_fish_sale(body: FishSaleCreate,
+                          user: dict = Depends(require_roles("PETUGAS_LAPANG", "ADMIN"))):
+    vessel = await vessels.find_one({"vessel_id": body.vessel_id}, {"_id": 0})
+    if not vessel:
+        raise HTTPException(status_code=404, detail="Perahu tidak ditemukan")
+    fish = await fish_prices.find_one({"fish_id": body.fish_id}, {"_id": 0})
+    if not fish:
+        raise HTTPException(status_code=404, detail="Jenis ikan tidak ditemukan")
+    if body.weight_kg <= 0:
+        raise HTTPException(status_code=400, detail="Berat harus lebih dari 0")
+    if body.payment_method not in ("CASH", "POTONG_UTANG"):
+        raise HTTPException(status_code=400, detail="Metode pembayaran tidak valid")
+
+    price = float(body.price_per_kg) if body.price_per_kg else float(fish["price_per_kg"])
+    gross = round(body.weight_kg * price, 2)
+    fisherman_id = vessel["owner_id"]
+    amount_deducted = 0.0
+
+    if body.payment_method == "POTONG_UTANG":
+        # Apply proceeds to outstanding BBM/modal debt (oldest first)
+        remaining = gross
+        debts = await transactions.find(
+            {"fisherman_id": fisherman_id, "status": "DP", "remaining_balance": {"$gt": 0}},
+            {"_id": 0}).sort("created_at", 1).to_list(1000)
+        for d in debts:
+            if remaining <= 0:
+                break
+            pay = min(remaining, d["remaining_balance"])
+            new_bal = round(d["remaining_balance"] - pay, 2)
+            await transactions.update_one(
+                {"transaction_id": d["transaction_id"]},
+                {"$set": {"remaining_balance": new_bal, "status": "LUNAS" if new_bal <= 0 else "DP"}})
+            remaining = round(remaining - pay, 2)
+            amount_deducted = round(amount_deducted + pay, 2)
+    cash_paid = round(gross - amount_deducted, 2)
+
+    doc = {
+        "sale_id": gen_id("sale"), "vessel_id": vessel["vessel_id"], "vessel_name": vessel["vessel_name"],
+        "fisherman_id": fisherman_id, "fisherman_name": vessel["owner_name"],
+        "fish_id": fish["fish_id"], "fish_name": fish["name"], "weight_kg": body.weight_kg,
+        "price_per_kg": price, "gross_amount": gross, "payment_method": body.payment_method,
+        "amount_deducted": amount_deducted, "cash_paid": cash_paid, "notes": body.notes,
+        "recorded_by": user["user_id"], "recorded_by_name": user["name"],
+        "created_at": now_utc().isoformat(),
+    }
+    await fish_sales.insert_one(dict(doc))
+    doc.pop("_id", None)
+
+    if body.payment_method == "POTONG_UTANG":
+        msg = (f"Lelang {body.weight_kg:.0f}kg {fish['name']} = Rp{gross:,.0f}. "
+               f"Dipotong utang Rp{amount_deducted:,.0f}, tunai Rp{cash_paid:,.0f}.")
+    else:
+        msg = f"Lelang {body.weight_kg:.0f}kg {fish['name']} = Rp{gross:,.0f} dibayar tunai."
+    await add_notification(fisherman_id, msg, "INFO")
+    return doc
+
+
+@api.get("/fish-sales")
+async def list_fish_sales(user: dict = Depends(get_current_user)):
+    if user["role"] in ("ADMIN", "PETUGAS_LAPANG", "PETUGAS_DINAS"):
+        q = {}
+    else:
+        q = {"fisherman_id": user["user_id"]}
+    return await fish_sales.find(q, {"_id": 0}).sort("created_at", -1).to_list(1000)
 
 
 # ----------------------------- notifications -----------------------------

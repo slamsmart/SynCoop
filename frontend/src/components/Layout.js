@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutGrid, ShieldCheck, Ship, Wallet, Calculator, Bell, FileCheck2,
-  Fish, Users, Anchor, LogOut, Menu, X, ClipboardList,
+  Fish, Users, Anchor, LogOut, Menu, X, ClipboardList, Gavel,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { ROLE_LABELS } from "@/lib/api";
@@ -14,18 +14,21 @@ const MENU = {
     { to: "/membership", label: "Keanggotaan", icon: ShieldCheck },
     { to: "/vessels", label: "Perahu & Kuota", icon: Ship },
     { to: "/debts", label: "Utang Saya", icon: Wallet },
+    { to: "/fish-sales", label: "Penjualan Ikan", icon: Gavel },
     { to: "/calculator", label: "Kalkulator Ikan", icon: Calculator },
     { to: "/notifications", label: "Notifikasi", icon: Bell },
   ],
   PETUGAS_LAPANG: [
     { to: "/dashboard", label: "Dashboard", icon: LayoutGrid },
     { to: "/transactions", label: "Catat Transaksi", icon: ClipboardList },
+    { to: "/fish-sales", label: "Lelang Ikan", icon: Gavel },
     { to: "/vessels", label: "Data Perahu", icon: Ship },
     { to: "/debts", label: "Master Piutang", icon: Wallet },
   ],
   ADMIN: [
     { to: "/dashboard", label: "Dashboard", icon: LayoutGrid },
     { to: "/transactions", label: "Validasi Transaksi", icon: FileCheck2 },
+    { to: "/fish-sales", label: "Lelang Ikan", icon: Gavel },
     { to: "/debts", label: "Master Piutang", icon: Wallet },
     { to: "/vessels", label: "Data Perahu", icon: Ship },
     { to: "/fish-prices", label: "Harga Ikan & Bagi Hasil", icon: Fish },

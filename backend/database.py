@@ -17,5 +17,6 @@ vessels = db.vessels
 transactions = db.transactions
 fish_prices = db.fish_prices
 fish_calcs = db.fish_calcs
+fish_sales = db.fish_sales
 notifications = db.notifications
 settings = db.settings

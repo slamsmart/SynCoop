@@ -1,0 +1,34 @@
+{
+  "summary": "Tested new Lelang Ikan (fish-sales) feature backend + frontend. 43/43 backend pytest pass (12 new fish-sales tests + 31 regression). Frontend flow verified: PETUGAS_LAPANG can record CASH and POTONG_UTANG sales with live preview (Bruto/Tunai); NELAYAN sees read-only listing without add button; Calculator route loads with calc-error testid in source. Vessels listing now includes owner_outstanding. POTONG_UTANG deduction loop confirmed: deducts oldest-first, marks transactions LUNAS, cash remainder paid when gross > outstanding. Notifications created for fisherman after every sale.",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "FishSales sale-form / Calculator selects", "issues": ["Dev-mode hydration warning: <span> cannot be a child of <option>. Caused by emergent visual-edit wrapper injecting <span style=display:contents> inside <option>. Not user-visible in production builds but pollutes console; safe to ignore unless production build also warns."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_fish_sales.py",
+    "/app/backend/tests/backend_test.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "Optional: dedupe/clean accumulated TEST_ vessels created by previous testing iterations (cosmetic, does not affect correctness).",
+    "Optional: add a server-side cap so PETUGAS_LAPANG cannot create POTONG_UTANG sale when owner_outstanding == 0 to give clearer UX (currently it just sets amount_deducted=0 and pays full cash, which is correct math but might confuse user)."
+  ],
+  "critical_code_review_comments": [
+    "FishSales.js live preview uses Math.min(gross, owner_outstanding) for UI; backend uses real-time DB lookup. They can diverge if multiple sales occur quickly — backend authoritative, so OK.",
+    "create_fish_sale lacks idempotency key; double-click on sale-submit could create duplicates (submit button is disabled when required fields empty but not after submit). Consider disabling button while POST is in-flight.",
+    "owner_outstanding query inside list_vessels runs an extra Mongo find per vessel (N+1). Acceptable at current scale but should aggregate if vessel count grows."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_fish_sales.py (new)"
+  ],
+  "success_rate": { "backend": "100% (43/43)", "frontend": "100% on tested flows" },
+  "test_credentials": "Demo logins via POST /api/auth/demo {role: NELAYAN|PETUGAS_LAPANG|ADMIN|PETUGAS_DINAS}. Seeded NELAYAN owns 2 vessels + DP debt.",
+  "seed_data_creation": "Each POTONG_UTANG test creates a small DP transaction first to ensure deterministic deduction math regardless of prior state.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "All Lelang Ikan flows verified end-to-end. Backend test file /app/backend/tests/test_fish_sales.py covers CASH math, POTONG_UTANG deduction (partial + excess), price override, role guard, validation, notification, owner_outstanding. Reuse for regression. NELAYAN dashboard fish-sales listing has a brief race where Empty state may render before fetch completes — add ~1s wait after navigation when asserting rows. DB has accumulated TEST_ vessels from past runs (cosmetic only)."
+}
