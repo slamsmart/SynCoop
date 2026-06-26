@@ -1,0 +1,87 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #FFFFFF;
+  --ink: #0B0B0B;
+  --muted: #666666;
+  --lavender: #F3F0FA;
+  --line: #E6E6E6;
+  --danger: #C81E1E;
+  --ok: #0B7A3B;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.01em;
+}
+
+::selection { background: var(--ink); color: #fff; }
+
+/* Swiss display heading */
+.swiss-display {
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  line-height: 0.95;
+}
+
+.mono-label {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.hairline { border-color: var(--line); }
+
+.lav { background: var(--lavender); }
+
+/* big tap targets for dockside use */
+.tap { min-height: 52px; }
+
+.btn-primary {
+  background: var(--ink);
+  color: #fff;
+  transition: opacity .18s ease, transform .18s ease;
+}
+.btn-primary:hover { opacity: .85; }
+.btn-primary:active { transform: translateY(1px); }
+
+.btn-outline {
+  border: 1px solid var(--ink);
+  color: var(--ink);
+  background: transparent;
+  transition: background-color .18s ease, color .18s ease;
+}
+.btn-outline:hover { background: var(--ink); color: #fff; }
+
+input, select, textarea {
+  font-family: inherit;
+}
+
+.field {
+  border: 1px solid var(--line);
+  background: #fff;
+  transition: border-color .18s ease;
+}
+.field:focus { outline: none; border-color: var(--ink); }
+
+/* fade in */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.fade-up { animation: fadeUp .45s cubic-bezier(.2,.7,.2,1) both; }
+
+::-webkit-scrollbar { width: 9px; height: 9px; }
+::-webkit-scrollbar-thumb { background: #d8d8d8; }
+::-webkit-scrollbar-thumb:hover { background: #bbb; }
