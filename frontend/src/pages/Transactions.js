@@ -8,7 +8,9 @@ import { PageHeader, Badge, Empty } from "@/components/ui-kit";
 export default function Transactions() {
   const { user } = useAuth();
   const [trx, setTrx] = useState([]);
+  const [sales, setSales] = useState([]);
   const [vessels, setVessels] = useState([]);
+  const [tab, setTab] = useState("bbm");
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ vessel_id: "", liters_bought: "", amount_paid: "" });
   const [quotaAlert, setQuotaAlert] = useState(null);
@@ -21,6 +23,7 @@ export default function Transactions() {
   const load = useCallback(() => {
     api.get("/transactions").then((r) => setTrx(r.data)).catch(() => {});
     api.get("/vessels").then((r) => setVessels(r.data)).catch(() => {});
+    api.get("/fish-sales").then((r) => setSales(r.data)).catch(() => {});
   }, []);
   useEffect(() => { load(); }, [load]);
 
@@ -44,7 +47,10 @@ export default function Transactions() {
 
   const doValidate = async () => {
     try {
-      await api.post(`/transactions/${validateFor.transaction_id}/validate`, { receipt_photo_url: photoUrl });
+      const url = validateFor.sale_id
+        ? `/fish-sales/${validateFor.sale_id}/validate`
+        : `/transactions/${validateFor.transaction_id}/validate`;
+      await api.post(url, { receipt_photo_url: photoUrl });
       setValidateFor(null); setPhotoUrl(""); load();
     } catch { alert("Gagal validasi"); }
   };
@@ -57,13 +63,54 @@ export default function Transactions() {
         kicker={isAdmin ? "Verifikasi Buku Besar" : "Pencatatan Dockside"}
         title={isAdmin ? "Validasi Transaksi" : "Catat Transaksi BBM"}
         desc={isAdmin ? "Validasi entri lapangan & unggah bukti fisik nota." : "Catat pembelian BBM nelayan di dermaga."}
-        action={isLapang ? (
+        action={isLapang && tab === "bbm" ? (
           <button data-testid="add-trx-btn" onClick={() => setShowForm(!showForm)} className="tap btn-primary px-5 font-semibold flex items-center gap-2">
             <Plus size={18} /> Transaksi Baru
           </button>
         ) : null}
       />
 
+      {isAdmin && (
+        <div className="flex gap-px bg-[var(--line)] border hairline mb-8 w-full sm:w-auto sm:inline-flex">
+          <button data-testid="tab-bbm" onClick={() => setTab("bbm")}
+            className={`px-6 h-12 text-sm font-semibold transition-colors ${tab === "bbm" ? "bg-[var(--ink)] text-white" : "bg-white"}`}>
+            Transaksi BBM {trx.filter((t) => !t.is_validated).length > 0 && `(${trx.filter((t) => !t.is_validated).length})`}
+          </button>
+          <button data-testid="tab-lelang" onClick={() => setTab("lelang")}
+            className={`px-6 h-12 text-sm font-semibold transition-colors ${tab === "lelang" ? "bg-[var(--ink)] text-white" : "bg-white"}`}>
+            Lelang Ikan {sales.filter((s) => !s.is_validated).length > 0 && `(${sales.filter((s) => !s.is_validated).length})`}
+          </button>
+        </div>
+      )}
+
+      {tab === "lelang" && isAdmin ? (
+        sales.length === 0 ? <Empty>Belum ada transaksi lelang.</Empty> : (
+          <div className="border hairline divide-y divide-[var(--line)]">
+            {sales.map((s) => (
+              <div key={s.sale_id} data-testid="sale-validate-row" className="p-5 flex flex-col sm:flex-row sm:items-center gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-semibold">{s.fish_name} · {s.weight_kg} kg</span>
+                    <Badge tone={s.payment_method === "CASH" ? "ok" : "ink"}>{s.payment_method === "CASH" ? "Tunai" : "Potong Utang"}</Badge>
+                    {s.is_validated ? <Badge tone="ink">Tervalidasi</Badge> : <Badge tone="outline">Belum Validasi</Badge>}
+                  </div>
+                  <p className="text-sm text-[var(--muted)] mt-1">{s.fisherman_name} · {fmtRp(s.gross_amount)} · oleh {s.recorded_by_name}</p>
+                </div>
+                <div className="text-right">
+                  {!s.is_validated && (
+                    <button data-testid="validate-sale-btn" onClick={() => setValidateFor(s)}
+                      className="btn-outline px-3 py-1.5 text-sm font-semibold flex items-center gap-1 ml-auto">
+                      <CheckCircle2 size={14} /> Validasi Nota
+                    </button>
+                  )}
+                  {s.receipt_photo_url && <a href={s.receipt_photo_url} target="_blank" rel="noreferrer" className="mono-label block mt-1">lihat bukti</a>}
+                </div>
+              </div>
+            ))}
+          </div>
+        )
+      ) : (
+      <>
       {showForm && (
         <div data-testid="trx-form" className="border hairline p-6 mb-8 grid grid-cols-1 md:grid-cols-3 gap-4 fade-up">
           <div className="md:col-span-3">
@@ -129,6 +176,8 @@ export default function Transactions() {
           ))}
         </div>
       )}
+      </>
+      )}
 
       {/* Quota exceeded alert */}
       <AnimatePresence>
@@ -157,7 +206,7 @@ export default function Transactions() {
         {validateFor && (
           <Overlay onClose={() => setValidateFor(null)}>
             <h3 className="swiss-display text-2xl">Unggah Bukti Fisik</h3>
-            <p className="text-[var(--muted)] mt-2 text-sm">Tempel URL foto nota/penyerahan BBM untuk {validateFor.vessel_name}.</p>
+            <p className="text-[var(--muted)] mt-2 text-sm">Foto/scan coretan kwitansi atau nota petugas lapang untuk {validateFor.sale_id ? `lelang ${validateFor.fish_name}` : `BBM ${validateFor.vessel_name}`}.</p>
             <div className="flex items-center gap-2 mt-5">
               <Camera size={18} />
               <input data-testid="receipt-url" className="field tap flex-1 px-4" placeholder="https://… url foto bukti"

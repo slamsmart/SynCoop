@@ -54,7 +54,7 @@ export default function Dashboard() {
           {role === "ADMIN" && (
             <>
               <Cell><StatCard index={0} label="Total Piutang" value={fmtRp(stats.total_outstanding)} danger={stats.total_outstanding > 0} sub={`${stats.debtor_count} penunggak`} /></Cell>
-              <Cell><StatCard index={1} label="Menunggu Validasi" value={stats.pending_validation} /></Cell>
+              <Cell><StatCard index={1} label="Menunggu Validasi" value={stats.pending_validation + (stats.pending_sale_validation || 0)} sub={`${stats.pending_validation} BBM · ${stats.pending_sale_validation || 0} Lelang`} /></Cell>
               <Cell><StatCard index={2} label="KYC Pending" value={stats.pending_kyc} /></Cell>
               <Cell><StatCard index={3} label="Total Pengguna" value={stats.total_users} sub={`${stats.total_vessels} perahu · ${stats.total_transactions} transaksi`} /></Cell>
             </>

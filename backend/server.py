@@ -465,6 +465,7 @@ async def create_fish_sale(body: FishSaleCreate,
         "price_per_kg": price, "gross_amount": gross, "payment_method": body.payment_method,
         "amount_deducted": amount_deducted, "cash_paid": cash_paid, "notes": body.notes,
         "recorded_by": user["user_id"], "recorded_by_name": user["name"],
+        "is_validated": False, "receipt_photo_url": None, "validated_by": None,
         "created_at": now_utc().isoformat(),
     }
     await fish_sales.insert_one(dict(doc))
@@ -486,6 +487,22 @@ async def list_fish_sales(user: dict = Depends(get_current_user)):
     else:
         q = {"fisherman_id": user["user_id"]}
     return await fish_sales.find(q, {"_id": 0}).sort("created_at", -1).to_list(1000)
+
+
+@api.post("/fish-sales/{sale_id}/validate")
+async def validate_fish_sale(sale_id: str, body: ValidateTransaction,
+                            user: dict = Depends(require_roles("ADMIN"))):
+    sale = await fish_sales.find_one({"sale_id": sale_id})
+    if not sale:
+        raise HTTPException(status_code=404, detail="Transaksi lelang tidak ditemukan")
+    await fish_sales.update_one({"sale_id": sale_id}, {"$set": {
+        "is_validated": True, "receipt_photo_url": body.receipt_photo_url,
+        "validated_by": user["name"],
+    }})
+    await add_notification(sale["fisherman_id"],
+                           f"Transaksi lelang {sale['weight_kg']:.0f}kg {sale['fish_name']} telah divalidasi koperasi.",
+                           "INFO")
+    return {"ok": True}
 
 
 # ----------------------------- notifications -----------------------------
@@ -567,6 +584,7 @@ async def dashboard_stats(user: dict = Depends(get_current_user)):
             "total_vessels": await vessels.count_documents({}),
             "total_transactions": await transactions.count_documents({}),
             "pending_validation": await transactions.count_documents({"is_validated": False}),
+            "pending_sale_validation": await fish_sales.count_documents({"is_validated": False}),
             "total_outstanding": round(sum(d["remaining_balance"] for d in debts), 2),
             "debtor_count": len(debts),
             "pending_kyc": await users.count_documents({"kyc_status": "PENDING"}),
