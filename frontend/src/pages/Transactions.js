@@ -17,6 +17,8 @@ export default function Transactions() {
   const [validateFor, setValidateFor] = useState(null);
   const [photoUrl, setPhotoUrl] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [validating, setValidating] = useState(false);
 
   const isLapang = user.role === "PETUGAS_LAPANG" || user.role === "ADMIN";
   const isAdmin = user.role === "ADMIN";
@@ -29,6 +31,8 @@ export default function Transactions() {
   useEffect(() => { load(); }, [load]);
 
   const submit = async () => {
+    if (submitting) return;
+    setSubmitting(true);
     setQuotaAlert(null);
     try {
       await api.post("/transactions", {
@@ -43,6 +47,8 @@ export default function Transactions() {
       const d = e?.response?.data?.detail;
       if (d && typeof d === "object" && d.code === "QUOTA_EXCEEDED") setQuotaAlert(d);
       else alert(typeof d === "string" ? d : "Gagal mencatat transaksi");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -63,6 +69,8 @@ export default function Transactions() {
   };
 
   const doValidate = async () => {
+    if (validating) return;
+    setValidating(true);
     try {
       const url = validateFor.sale_id
         ? `/fish-sales/${validateFor.sale_id}/validate`
@@ -70,6 +78,7 @@ export default function Transactions() {
       await api.post(url, { receipt_photo_url: photoUrl });
       setValidateFor(null); setPhotoUrl(""); load();
     } catch { alert("Gagal validasi"); }
+    finally { setValidating(false); }
   };
 
   const selectedVessel = vessels.find((v) => v.vessel_id === form.vessel_id);
@@ -156,8 +165,8 @@ export default function Transactions() {
               value={form.amount_paid} onChange={(e) => setForm({ ...form, amount_paid: e.target.value })} />
           </div>
           <div className="flex items-end">
-            <button data-testid="trx-submit" onClick={submit} disabled={!form.vessel_id || !form.liters_bought}
-              className="tap btn-primary w-full font-semibold disabled:opacity-40">Catat</button>
+            <button data-testid="trx-submit" onClick={submit} disabled={!form.vessel_id || !form.liters_bought || submitting}
+              className="tap btn-primary w-full font-semibold disabled:opacity-40">{submitting ? "Menyimpan…" : "Catat"}</button>
           </div>
         </div>
       )}
@@ -241,8 +250,8 @@ export default function Transactions() {
             {photoUrl && (
               <button onClick={() => setPhotoUrl("")} className="mono-label mt-3" data-testid="receipt-reset">ganti foto</button>
             )}
-            <button data-testid="validate-confirm" onClick={doValidate} disabled={!photoUrl || uploading}
-              className="tap btn-primary w-full mt-6 font-semibold disabled:opacity-40">Validasi & Masukkan ke Buku Besar</button>
+            <button data-testid="validate-confirm" onClick={doValidate} disabled={!photoUrl || uploading || validating}
+              className="tap btn-primary w-full mt-6 font-semibold disabled:opacity-40">{validating ? "Memvalidasi…" : "Validasi & Masukkan ke Buku Besar"}</button>
           </Overlay>
         )}
       </AnimatePresence>

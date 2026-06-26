@@ -13,6 +13,7 @@ export default function FishSales() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ vessel_id: "", fish_id: "", weight_kg: "", price_per_kg: "", payment_method: "CASH", notes: "" });
   const [err, setErr] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const load = useCallback(() => {
     api.get("/fish-sales").then((r) => setSales(r.data)).catch(() => {});
@@ -29,6 +30,8 @@ export default function FishSales() {
   const gross = (parseFloat(form.weight_kg) || 0) * effPrice;
 
   const submit = async () => {
+    if (submitting) return;
+    setSubmitting(true);
     setErr("");
     try {
       await api.post("/fish-sales", {
@@ -44,6 +47,8 @@ export default function FishSales() {
       load();
     } catch (e) {
       setErr(e?.response?.data?.detail || "Gagal mencatat lelang");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -125,8 +130,8 @@ export default function FishSales() {
           </div>
 
           {err && <p className="text-[var(--danger)] text-sm mt-3">{err}</p>}
-          <button data-testid="sale-submit" onClick={submit} disabled={!form.vessel_id || !form.fish_id || !form.weight_kg}
-            className="tap btn-primary px-6 font-semibold mt-5 disabled:opacity-40">Catat Lelang</button>
+          <button data-testid="sale-submit" onClick={submit} disabled={!form.vessel_id || !form.fish_id || !form.weight_kg || submitting}
+            className="tap btn-primary px-6 font-semibold mt-5 disabled:opacity-40">{submitting ? "Menyimpan…" : "Catat Lelang"}</button>
         </div>
       )}
 
