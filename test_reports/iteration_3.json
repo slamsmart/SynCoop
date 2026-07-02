@@ -1,0 +1,32 @@
+{
+  "summary": "Full regression on SynCoop after UX refresh for nelayan (mobile-first). Backend pytest: 43/43 PASS (auth, membership, vessels, transactions, quota, fish prices/calc, admin users, dashboard, notifications, fish-sales CASH + POTONG_UTANG). Frontend mobile 390x844: all 4 demo role logins reach /dashboard; NELAYAN home cards (home-quota-card, home-debt-card, home-fish-prices, quick-sales, quick-vessels, membership-banner) render; bottom-nav present with all tabs functional (bottomnav-fish-sales and bottomnav-more required JS click due to Emergent badge overlay in bottom-right — expected, not a bug); more-sheet exposes sheet-calculator/membership/notifications + Keluar button; Calculator flow (fish-chip → quick-kg-{1,5,10,25} → calc-submit → calc-result) works with visible net income + coop cut breakdown; other nelayan pages show correct Indonesian headings (Jatah Solar Saya, Utang Saya, Penjualan Ikan Saya, Kartu Anggota). Desktop 1920x800: sidebar visible with full menu, bottom-nav hidden. logout-btn-mobile returns to /login.",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Bottom nav (mobile)", "issues": ["'Made with Emergent' badge in bottom-right of viewport overlaps bottomnav-more and bottomnav-fish-sales, intercepting pointer events. Real users tap through the badge area rarely, but consider adding right padding to bottom-nav or z-index adjustment. Playwright must use JS click to bypass — as noted in test brief."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/backend_test.py",
+    "/app/backend/tests/test_fish_sales.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "Optional: shift Emergent badge or increase bottom-nav right-side padding so bottomnav-more/fish-sales aren't overlapped by the badge in the preview environment."
+  ],
+  "critical_code_review_comments": [
+    "Calculator: calc-submit is correctly disabled when fishId or weight is empty; loading state (busy) prevents double submit — good.",
+    "Dashboard NelayanHome: prices.slice(0,5) hard-limits fish prices — acceptable UX cap.",
+    "Layout.js: bottom nav renders in mobile-only container (lg:hidden) — desktop sidebar correctly exclusive.",
+    "No console errors observed during nelayan flow."
+  ],
+  "updated_files": [],
+  "success_rate": { "backend": "100% (43/43)", "frontend": "100% on tested flows" },
+  "test_credentials": "Demo quick-access via /login demo-{NELAYAN|ADMIN|PETUGAS_LAPANG|PETUGAS_DINAS}-btn (no PIN needed).",
+  "seed_data_creation": "None new; used pre-seeded nelayan@demo.syncoop.id account with 4 vessels + 1 outstanding DP (visible in desktop screenshot).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "New NelayanHome (Dashboard.js) + mobile Layout bottom-nav + more-sheet + Calculator revamp all working. Backend unchanged from prior 43/43 baseline. If retesting bottom-nav on mobile viewport, always use page.evaluate JS click for bottomnav-more and bottomnav-fish-sales — 'Made with Emergent' badge overlays them at bottom-right in preview environment."
+}
