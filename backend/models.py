@@ -43,6 +43,10 @@ class DemoLogin(BaseModel):
     role: str
 
 
+class BiometricRegister(BaseModel):
+    credential_id: str
+    device_name: Optional[str] = None
+
 # ---------- KYC ----------
 class KycSubmit(BaseModel):
     nik: str
@@ -77,6 +81,8 @@ class TransactionCreate(BaseModel):
     vessel_id: str
     liters_bought: float
     amount_paid: float
+    payment_method: str = "CASH"  # CASH / QRIS / TRANSFER / PIUTANG
+    payment_ref: Optional[str] = None
 
 
 class Transaction(BaseModel):
@@ -133,13 +139,76 @@ class ProfitSharing(BaseModel):
 
 
 # ---------- Fish Sale / Auction (Lelang Ikan) ----------
+class PublicPortalSettings(BaseModel):
+    hero_kicker: str = "Ekosistem Manajemen Koperasi Nelayan"
+    hero_heading: str = "Koperasi nelayan yang transparan dan dekat."
+    hero_description: str = "Kelola BBM subsidi & kas koperasi secara transparan. Distribusi BBM tepat sasaran, kalkulator hasil tangkapan, dan pembukuan utang yang adil untuk nelayan akar rumput."
+    stat_cards: Optional[List[dict]] = None
+
 class FishSaleCreate(BaseModel):
     vessel_id: str
     fish_id: str
     weight_kg: float
     price_per_kg: Optional[float] = None  # auction override; defaults to market price
-    payment_method: str  # CASH / POTONG_UTANG
+    payment_method: str  # CASH / QRIS / TRANSFER / POTONG_UTANG
+    payment_ref: Optional[str] = None
     notes: Optional[str] = None
+
+# ---------- Savings / Loans ----------
+class SavingsEntryCreate(BaseModel):
+    member_email: str
+    entry_type: str  # POKOK / WAJIB / SUKARELA
+    direction: str = "DEPOSIT"  # DEPOSIT / WITHDRAWAL
+    amount: float
+    notes: Optional[str] = None
+
+class LoanCreate(BaseModel):
+    amount: float
+    purpose: str
+    tenor_months: int = 6
+    member_email: Optional[str] = None
+
+class LoanDecision(BaseModel):
+    notes: Optional[str] = None
+
+class LoanPaymentCreate(BaseModel):
+    amount: float
+    payment_method: str = "CASH"
+    payment_ref: Optional[str] = None
+    notes: Optional[str] = None
+
+# ---------- Inventory ----------
+class InventoryItemCreate(BaseModel):
+    name: str
+    category: str
+    unit: str
+    min_stock: float = 0
+
+class InventoryMovementCreate(BaseModel):
+    item_id: str
+    movement_type: str  # IN / OUT
+    quantity: float
+    reason: str
+    reference: Optional[str] = None
+
+# ---------- Service / Announcements ----------
+class ServiceTicketCreate(BaseModel):
+    category: str
+    subject: str
+    message: str
+    contact_name: Optional[str] = None
+    contact_phone: Optional[str] = None
+
+class TicketReplyCreate(BaseModel):
+    message: str
+
+class TicketStatusUpdate(BaseModel):
+    status: str  # OPEN / IN_PROGRESS / RESOLVED
+
+class AnnouncementCreate(BaseModel):
+    title: str
+    body: str
+    audience: str = "PUBLIC"  # PUBLIC / MEMBERS / STAFF
 
 
 # ---------- Admin ----------

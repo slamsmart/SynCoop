@@ -12,10 +12,18 @@ from pathlib import Path
 def _load_backend_url():
     url = os.environ.get("REACT_APP_BACKEND_URL")
     if not url:
-        env_file = Path("/app/frontend/.env")
-        for line in env_file.read_text().splitlines():
-            if line.startswith("REACT_APP_BACKEND_URL="):
-                url = line.split("=", 1)[1].strip().strip('"').strip("'")
+        env_files = [
+            Path("/app/frontend/.env"),
+            Path(__file__).resolve().parents[2] / "frontend" / ".env",
+        ]
+        for env_file in env_files:
+            if not env_file.exists():
+                continue
+            for line in env_file.read_text().splitlines():
+                if line.startswith("REACT_APP_BACKEND_URL="):
+                    url = line.split("=", 1)[1].strip().strip('"').strip("'")
+                    break
+            if url:
                 break
     if not url:
         raise RuntimeError("REACT_APP_BACKEND_URL not configured")
