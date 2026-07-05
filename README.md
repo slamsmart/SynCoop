@@ -69,7 +69,6 @@ Untuk MongoDB Atlas, isi `backend/.env` seperti ini:
 MONGO_URL=mongodb+srv://<username>:<password>@<cluster-host>/syncoop?retryWrites=true&w=majority&appName=<app-name>
 DB_NAME=syncoop
 APP_ENV=local
-EMERGENT_LLM_KEY=
 ```
 
 Untuk MongoDB lokal, isi:
@@ -78,7 +77,6 @@ Untuk MongoDB lokal, isi:
 MONGO_URL=mongodb://localhost:27017
 DB_NAME=syncoop
 APP_ENV=local
-EMERGENT_LLM_KEY=
 ```
 
 Jalankan backend:
