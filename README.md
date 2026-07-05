@@ -84,13 +84,13 @@ EMERGENT_LLM_KEY=
 Jalankan backend:
 
 ```bash
-uvicorn server:app --host 0.0.0.0 --port 8001 --reload
+uvicorn server:app --host 0.0.0.0 --port 8002 --reload
 ```
 
 Backend akan tersedia di:
 
 ```text
-http://localhost:8001/api
+http://localhost:8002/api
 ```
 
 Saat startup, aplikasi akan otomatis membuat data demo jika collection target
@@ -114,7 +114,7 @@ npm install
 Buat atau cek file `frontend/.env`:
 
 ```env
-REACT_APP_BACKEND_URL=http://localhost:8001
+REACT_APP_BACKEND_URL=http://localhost:8002
 ```
 
 Jalankan frontend:
@@ -134,6 +134,30 @@ Frontend akan tersedia di:
 ```text
 http://localhost:3000
 ```
+
+### Catatan Deploy Cloudflare Pages
+
+Cloudflare Pages menjalankan frontend static. Backend FastAPI tetap harus berjalan
+di host HTTPS publik terpisah.
+
+Set environment variable Cloudflare Pages saat build:
+
+```env
+REACT_APP_BACKEND_URL=https://domain-backend-publik
+REACT_APP_FINGERPRINT_API_KEY=<public-key-fingerprint>
+```
+
+Set environment variable backend production:
+
+```env
+APP_ENV=production
+FRONTEND_URL=https://syncoop.pages.dev
+CORS_ORIGINS=https://syncoop.pages.dev
+```
+
+Jika `REACT_APP_BACKEND_URL` masih `http://localhost:8002`, tombol akun demo di `https://syncoop.pages.dev` akan
+gagal karena browser pengunjung mencoba memanggil backend di komputer lokalnya
+sendiri.
 
 ### Akun Demo
 
