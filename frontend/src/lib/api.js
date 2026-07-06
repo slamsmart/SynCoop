@@ -1,16 +1,24 @@
 import axios from "axios";
 
-const BACKEND_URL = (process.env.REACT_APP_BACKEND_URL || "").replace(/\/$/, "");
+const CONFIGURED_BACKEND_URL = (process.env.REACT_APP_BACKEND_URL || "").replace(/\/$/, "");
+const PRODUCTION_BACKEND_URL = "https://syncoop-api.onrender.com";
+const isBrowser = typeof window !== "undefined";
+const isPublicHttps =
+  isBrowser &&
+  window.location.protocol === "https:" &&
+  !["localhost", "127.0.0.1", "::1"].includes(window.location.hostname);
+const isLocalBackend = /localhost|127\.0\.0\.1/.test(CONFIGURED_BACKEND_URL);
+
+const BACKEND_URL =
+  isPublicHttps && isLocalBackend
+    ? PRODUCTION_BACKEND_URL
+    : CONFIGURED_BACKEND_URL;
 export const API = `${BACKEND_URL}/api`;
 export { BACKEND_URL };
 
-if (
-  typeof window !== "undefined" &&
-  window.location.protocol === "https:" &&
-  /localhost|127\.0\.0\.1/.test(BACKEND_URL)
-) {
+if (isPublicHttps && isLocalBackend) {
   // Helps catch production builds that were created with a local API URL.
-  console.warn("SynCoop frontend is using a localhost backend URL on a public HTTPS domain.");
+  console.warn("SynCoop frontend ignored a localhost backend URL on a public HTTPS domain.");
 }
 
 const api = axios.create({
