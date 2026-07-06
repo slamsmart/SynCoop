@@ -51,10 +51,10 @@ export default function Login() {
           className="w-full max-w-md mx-auto"
         >
           <div data-testid="login-main">
-            <p className="mono-label mb-2">Daftar / Masuk</p>
-            <h2 className="swiss-display text-3xl mb-3">Mulai dengan Gmail.</h2>
+            <p className="mono-label mb-2">Daftar atau masuk</p>
+            <h2 className="swiss-display text-3xl mb-3">Masuk dengan Gmail</h2>
             <p className="text-sm text-[var(--muted)] mb-6">
-              Akun baru otomatis dibuat saat pertama kali masuk dengan OAuth Google.
+              Akun baru otomatis dibuat saat pertama kali Anda masuk dengan akun Google.
             </p>
 
             <button
@@ -64,7 +64,7 @@ export default function Login() {
               className="tap w-full btn-primary flex items-center justify-center gap-3 font-semibold text-[15px] disabled:opacity-50"
             >
               <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" className="w-5 h-5 bg-white rounded-sm" />
-              {busy ? "Mengalihkan..." : "Lanjutkan dengan Gmail"}
+              {busy ? "Mengalihkan..." : "Daftar atau masuk dengan Gmail"}
             </button>
           </div>
         </motion.div>

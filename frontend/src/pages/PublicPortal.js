@@ -100,11 +100,11 @@ export default function PublicPortal() {
                   onClick={startGoogleLogin}
                   className="tap btn-primary px-5 font-semibold flex items-center gap-2"
                 >
-                  DAFTAR <ArrowRight size={16} />
+                  Daftar <ArrowRight size={16} />
                 </button>
                 <a href="#layanan" className="tap btn-outline px-5 font-semibold flex items-center gap-2">Ajukan Layanan</a>
               </div>
-              <p className="text-sm text-[var(--muted)] mt-3">Menggunakan Gmail lebih cepat, lewat credential OAuth Google.</p>
+              <p className="text-sm text-[var(--muted)] mt-3">Gunakan akun Google agar pendaftaran dan proses masuk lebih cepat.</p>
             </div>
             <div data-reveal style={{ "--reveal-delay": "120ms" }}>
               <LoginPanel installPrompt={installPrompt} onInstall={installApp} />
@@ -180,10 +180,10 @@ function LoginPanel({ installPrompt, onInstall }) {
   return (
     <div className="bg-white border hairline p-5 sm:p-6 lg:p-8 shadow-[0_24px_80px_rgba(11,11,11,0.06)]">
       <div className="mb-6">
-        <p className="mono-label mb-2">Daftar / Masuk</p>
-        <h2 className="swiss-display text-3xl sm:text-4xl leading-none">Mulai dengan Gmail.</h2>
+        <p className="mono-label mb-2">Daftar atau masuk</p>
+        <h2 className="swiss-display text-3xl sm:text-4xl leading-none">Masuk dengan Gmail</h2>
         <p className="text-sm text-[var(--muted)] mt-3">
-          Akun baru otomatis dibuat saat pertama kali masuk dengan OAuth Google.
+          Akun baru otomatis dibuat saat pertama kali Anda masuk dengan akun Google.
         </p>
       </div>
 
@@ -192,7 +192,7 @@ function LoginPanel({ installPrompt, onInstall }) {
         className="tap w-full btn-primary flex items-center justify-center gap-3 font-semibold text-[15px] mb-3"
       >
         <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" className="w-5 h-5 bg-white rounded-sm" />
-        DAFTAR dengan Gmail
+        Daftar atau masuk dengan Gmail
       </button>
 
       {installPrompt && (

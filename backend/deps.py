@@ -24,7 +24,17 @@ async def get_current_user(request: Request) -> dict:
     if expires_at < datetime.now(timezone.utc):
         raise HTTPException(status_code=401, detail="Session expired")
 
-    user = await users.find_one({"user_id": session["user_id"]}, {"_id": 0, "pin_hash": 0})
+    user = await users.find_one(
+        {"user_id": session["user_id"]},
+        {
+            "_id": 0,
+            "pin_hash": 0,
+            "biometric_credential_id": 0,
+            "biometric_enabled": 0,
+            "biometric_device_name": 0,
+            "biometric_registered_at": 0,
+        },
+    )
     if not user:
         raise HTTPException(status_code=401, detail="User not found")
     if session.get("role"):

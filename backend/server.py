@@ -68,6 +68,9 @@ api = APIRouter(prefix="/api")
 def public_user(u: dict) -> dict:
     u.pop("pin_hash", None)
     u.pop("biometric_credential_id", None)
+    u.pop("biometric_enabled", None)
+    u.pop("biometric_device_name", None)
+    u.pop("biometric_registered_at", None)
     u.pop("_id", None)
     return u
 
@@ -192,6 +195,26 @@ async def add_notification(user_id: str, message: str, ntype: str = "INFO", rela
         "type": ntype, "related_transaction_id": related, "is_read": False,
         "created_at": now_utc().isoformat(),
     })
+
+async def disable_legacy_biometric_flags():
+    await users.update_many(
+        {
+            "$or": [
+                {"biometric_enabled": {"$exists": True}},
+                {"biometric_credential_id": {"$exists": True}},
+                {"biometric_device_name": {"$exists": True}},
+                {"biometric_registered_at": {"$exists": True}},
+            ]
+        },
+        {
+            "$set": {"biometric_enabled": False},
+            "$unset": {
+                "biometric_credential_id": "",
+                "biometric_device_name": "",
+                "biometric_registered_at": "",
+            },
+        },
+    )
 
 async def find_member_by_email(email: str) -> dict:
     member = await users.find_one({"email": email}, {"_id": 0})
@@ -1076,7 +1099,14 @@ async def read_notification(notif_id: str, user: dict = Depends(get_current_user
 # ----------------------------- admin users -----------------------------
 @api.get("/admin/users")
 async def admin_list_users(user: dict = Depends(require_roles("ADMIN"))):
-    return await users.find({}, {"_id": 0, "pin_hash": 0}).sort("created_at", -1).to_list(1000)
+    return await users.find({}, {
+        "_id": 0,
+        "pin_hash": 0,
+        "biometric_credential_id": 0,
+        "biometric_enabled": 0,
+        "biometric_device_name": 0,
+        "biometric_registered_at": 0,
+    }).sort("created_at", -1).to_list(1000)
 
 
 @api.put("/admin/users/{user_id}/role")
@@ -1268,6 +1298,7 @@ async def on_startup():
         logger.warning(f"Storage disabled: {e}")
     try:
         await seed()
+        await disable_legacy_biometric_flags()
         logger.info("Seed complete")
     except Exception as e:
         logger.error(f"Seed error: {e}")
