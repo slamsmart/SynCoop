@@ -110,7 +110,7 @@ export default function PublicPortal() {
           <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
             <div data-reveal>
               <p className="mono-label mb-4">{portal.hero_kicker}</p>
-              <h1 className="swiss-display text-4xl sm:text-5xl lg:text-7xl">
+              <h1 className="hero-title swiss-display text-4xl sm:text-5xl lg:text-7xl">
                 {portal.hero_heading}
               </h1>
               <p className="text-[var(--muted)] text-lg mt-6 max-w-xl">

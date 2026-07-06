@@ -41,6 +41,15 @@ body {
   line-height: 0.95;
 }
 
+html.fonts-loading .hero-title {
+  opacity: 0;
+}
+
+html.fonts-ready .hero-title {
+  opacity: 1;
+  transition: opacity .18s ease;
+}
+
 .mono-label {
   font-size: 11px;
   letter-spacing: 0;

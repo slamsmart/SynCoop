@@ -16,6 +16,25 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=block" rel="stylesheet" />
         <script>
+            (function () {
+                var root = document.documentElement;
+                var done = false;
+                function showText() {
+                    if (done) return;
+                    done = true;
+                    root.classList.remove("fonts-loading");
+                    root.classList.add("fonts-ready");
+                }
+                root.classList.add("fonts-loading");
+                if (document.fonts && document.fonts.load) {
+                    document.fonts.load("800 72px Inter").then(showText).catch(showText);
+                    setTimeout(showText, 1600);
+                } else {
+                    showText();
+                }
+            })();
+        </script>
+        <script>
             if (["localhost", "127.0.0.1", "::1"].includes(window.location.hostname)) {
                 if ("serviceWorker" in navigator) {
                     navigator.serviceWorker.getRegistrations()
