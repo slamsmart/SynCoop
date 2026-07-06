@@ -33,10 +33,12 @@ class User(BaseModel):
 
 
 
+
+
+
+
 class DemoLogin(BaseModel):
     role: str
-
-
 
 
 # ---------- KYC ----------
