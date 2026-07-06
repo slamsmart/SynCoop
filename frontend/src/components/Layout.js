@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import {
   LayoutGrid, ShieldCheck, Ship, Wallet, Calculator, Bell, FileCheck2,
   Fish, Users, Anchor, LogOut, Menu, X, ClipboardList, Gavel,
@@ -72,10 +72,10 @@ export default function Layout() {
     <div className="min-h-screen flex flex-col lg:flex-row">
       {/* Mobile top bar */}
       <div className="lg:hidden flex items-center justify-between px-4 h-16 border-b hairline sticky top-0 bg-white z-40">
-        <div className="flex items-center gap-2">
+        <Link to="/" className="flex items-center gap-2">
           <div className="w-8 h-8 bg-[var(--ink)] text-white flex items-center justify-center"><Anchor size={16} /></div>
           <span className="mono-label !text-[var(--ink)]">SynCoop</span>
-        </div>
+        </Link>
         <button data-testid="mobile-menu-toggle" onClick={() => setOpen(!open)} className="tap w-10 flex items-center justify-center">
           {open ? <X size={22} /> : <Menu size={22} />}
         </button>
@@ -83,13 +83,13 @@ export default function Layout() {
 
       {/* Sidebar */}
       <aside className={`${open ? "flex" : "hidden"} lg:flex lg:w-72 lg:shrink-0 border-r hairline bg-white lg:sticky lg:top-0 lg:h-screen max-h-[calc(100vh-4rem)] lg:max-h-screen flex-col overflow-hidden`}>
-        <div className="hidden lg:flex items-center gap-3 px-6 h-20 border-b hairline">
+        <Link to="/" className="hidden lg:flex items-center gap-3 px-6 h-20 border-b hairline hover:bg-[var(--lavender)] transition-colors">
           <div className="w-9 h-9 bg-[var(--ink)] text-white flex items-center justify-center"><Anchor size={18} /></div>
           <div>
             <div className="font-extrabold tracking-tight leading-none">SynCoop</div>
             <div className="mono-label">Koperasi Digital</div>
           </div>
-        </div>
+        </Link>
 
         <nav className="px-3 py-5 flex-1 min-h-0 overflow-y-auto flex flex-col gap-1">
           <p className="mono-label px-3 pb-2">Menu</p>
