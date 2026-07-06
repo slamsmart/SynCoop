@@ -24,31 +24,20 @@ class User(BaseModel):
     maturation_end_date: str
     is_kyc_approved: bool = False
     kyc_status: str = "NONE"  # NONE, PENDING, APPROVED
-    has_pin: bool = False
     phone: Optional[str] = None
     nik: Optional[str] = None
     address: Optional[str] = None
 
 
-class PinSet(BaseModel):
-    pin: str
 
 
-class PinLogin(BaseModel):
-    email: str
-    pin: str
 
 
 class DemoLogin(BaseModel):
     role: str
 
 
-class BiometricRegister(BaseModel):
-    credential_id: str
-    device_name: Optional[str] = None
 
-class BiometricLogin(BaseModel):
-    credential_id: str
 
 # ---------- KYC ----------
 class KycSubmit(BaseModel):

@@ -12,7 +12,6 @@ from fastapi import (
     UploadFile, File, Header, Query,
 )
 from starlette.middleware.cors import CORSMiddleware
-from passlib.context import CryptContext
 
 from database import (
     db, users, sessions, vessels, transactions, fish_prices, fish_calcs,
@@ -23,7 +22,7 @@ from database import (
 from starlette.responses import RedirectResponse
 import storage as objstore
 from models import (
-    User, PinSet, PinLogin, DemoLogin, BiometricRegister, BiometricLogin, KycSubmit, VesselCreate, Vessel,
+    User, DemoLogin, KycSubmit, VesselCreate, Vessel,
     Transaction, TransactionCreate, ValidateTransaction, DebtReason, FishPriceCreate,
     FishCalcRequest, ProfitSharing, PublicPortalSettings, RoleUpdate, FishSaleCreate, now_utc, gen_id,
     SavingsEntryCreate, LoanCreate, LoanDecision, LoanPaymentCreate,
@@ -34,8 +33,6 @@ from deps import get_current_user, require_roles
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("syncoop")
-
-pwd = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 MATURATION_DAYS = 365
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000").rstrip("/")
@@ -185,8 +182,6 @@ async def new_user_doc(email: str, name: str, picture: str = None, role: str = "
         "maturation_end_date": (created + timedelta(days=MATURATION_DAYS)).isoformat(),
         "is_kyc_approved": False,
         "kyc_status": "NONE",
-        "has_pin": False,
-        "biometric_enabled": False,
         "phone": None, "nik": None, "address": None,
     }
 
@@ -312,63 +307,6 @@ async def logout(request: Request, response: Response):
     response.delete_cookie("session_token", path="/")
     return {"ok": True}
 
-
-@api.post("/auth/pin/set")
-async def set_pin(body: PinSet, user: dict = Depends(get_current_user)):
-    if not (body.pin.isdigit() and len(body.pin) == 6):
-        raise HTTPException(status_code=400, detail="PIN harus 6 angka")
-    await users.update_one({"user_id": user["user_id"]},
-                           {"$set": {"pin_hash": pwd.hash(body.pin), "has_pin": True}})
-    return {"ok": True}
-
-
-@api.post("/auth/pin/login")
-async def pin_login(body: PinLogin, response: Response):
-    user = await users.find_one({"email": body.email})
-    if not user or not user.get("pin_hash") or not pwd.verify(body.pin, user["pin_hash"]):
-        raise HTTPException(status_code=401, detail="Email atau PIN salah")
-    token = await create_session(user["user_id"], user.get("role"))
-    set_session_cookie(response, token)
-    return public_user(user)
-
-
-@api.post("/auth/biometric/register")
-async def register_biometric(body: BiometricRegister, user: dict = Depends(get_current_user)):
-    if not body.credential_id:
-        raise HTTPException(status_code=400, detail="Credential biometric tidak valid")
-    await users.update_one({"user_id": user["user_id"]}, {"$set": {
-        "biometric_enabled": True,
-        "biometric_credential_id": body.credential_id,
-        "biometric_device_name": body.device_name or "Perangkat ini",
-        "biometric_registered_at": now_utc().isoformat(),
-    }})
-    return {"ok": True}
-
-@api.post("/auth/biometric/login")
-async def biometric_login(body: BiometricLogin, response: Response):
-    if not body.credential_id:
-        raise HTTPException(status_code=400, detail="Credential biometric tidak valid")
-    user = await users.find_one({
-        "biometric_enabled": True,
-        "biometric_credential_id": body.credential_id,
-    })
-    if not user:
-        raise HTTPException(status_code=401, detail="Biometric belum terdaftar untuk perangkat ini")
-    token = await create_session(user["user_id"], user.get("role"))
-    set_session_cookie(response, token)
-    return public_user(user)
-
-@api.post("/auth/biometric/disable")
-async def disable_biometric(user: dict = Depends(get_current_user)):
-    await users.update_one({"user_id": user["user_id"]}, {
-        "$set": {"biometric_enabled": False},
-        "$unset": {
-            "biometric_credential_id": "",
-            "biometric_device_name": "",
-            "biometric_registered_at": "",
-        },
-    })
-    return {"ok": True}
 
 @api.post("/auth/demo")
 async def demo_login(body: DemoLogin, response: Response):

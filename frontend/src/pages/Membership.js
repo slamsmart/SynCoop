@@ -1,20 +1,9 @@
 import { useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Fingerprint, Lock, ShieldCheck, Clock } from "lucide-react";
+import { Lock, ShieldCheck, Clock } from "lucide-react";
 import api from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { PageHeader, Badge } from "@/components/ui-kit";
-
-function bufferToBase64url(buffer) {
-  const bytes = new Uint8Array(buffer);
-  let binary = "";
-  bytes.forEach((byte) => { binary += String.fromCharCode(byte); });
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
-}
-
-function stringToBuffer(value) {
-  return new TextEncoder().encode(value);
-}
 
 function useCountdown(status) {
   const [secs, setSecs] = useState(status?.seconds_remaining || 0);
@@ -33,12 +22,10 @@ function useCountdown(status) {
 }
 
 export default function Membership() {
-  const { user, checkAuth } = useAuth();
+  const { checkAuth } = useAuth();
   const [status, setStatus] = useState(null);
   const [form, setForm] = useState({ nik: "", phone: "", address: "" });
   const [msg, setMsg] = useState("");
-  const [bioMsg, setBioMsg] = useState("");
-  const [bioBusy, setBioBusy] = useState(false);
   const cd = useCountdown(status);
 
   const load = useCallback(() => {
@@ -59,63 +46,6 @@ export default function Membership() {
 
   const matured = status?.is_matured;
   const kyc = status?.kyc_status;
-  const biometricSupported = typeof window !== "undefined" && Boolean(window.PublicKeyCredential);
-
-  const enableBiometric = async () => {
-    setBioMsg("");
-    if (!biometricSupported) {
-      setBioMsg("Browser/perangkat ini belum mendukung biometric passkey.");
-      return;
-    }
-    setBioBusy(true);
-    try {
-      const challenge = crypto.getRandomValues(new Uint8Array(32));
-      const credential = await navigator.credentials.create({
-        publicKey: {
-          challenge,
-          rp: { name: "SynCoop" },
-          user: {
-            id: stringToBuffer(user.user_id || user.email),
-            name: user.email,
-            displayName: user.name || user.email,
-          },
-          pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }],
-          authenticatorSelection: {
-            authenticatorAttachment: "platform",
-            userVerification: "required",
-            residentKey: "required",
-            requireResidentKey: true,
-          },
-          timeout: 60000,
-          attestation: "none",
-        },
-      });
-      await api.post("/auth/biometric/register", {
-        credential_id: bufferToBase64url(credential.rawId),
-        device_name: navigator.userAgent.includes("Windows") ? "Windows Hello" : "Perangkat ini",
-      });
-      await checkAuth();
-      setBioMsg("Biometric/passkey aktif untuk akun ini.");
-    } catch (e) {
-      setBioMsg(e?.response?.data?.detail || "Aktivasi biometric dibatalkan atau gagal.");
-    } finally {
-      setBioBusy(false);
-    }
-  };
-
-  const disableBiometric = async () => {
-    setBioBusy(true);
-    setBioMsg("");
-    try {
-      await api.post("/auth/biometric/disable");
-      await checkAuth();
-      setBioMsg("Biometric/passkey dinonaktifkan.");
-    } catch {
-      setBioMsg("Gagal menonaktifkan biometric.");
-    } finally {
-      setBioBusy(false);
-    }
-  };
 
   return (
     <div data-testid="membership-page">
@@ -209,36 +139,6 @@ export default function Membership() {
         </div>
       </div>
 
-      <section className="mt-10 border hairline bg-white p-5 sm:p-8">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
-          <div className="max-w-2xl">
-            <div className="flex items-center gap-2 mb-3">
-              <Fingerprint size={18} />
-              <span className="mono-label">Keamanan Akun</span>
-              {user?.biometric_enabled ? <Badge tone="ok">Biometric Aktif</Badge> : <Badge tone="lav">Opsional</Badge>}
-            </div>
-            <h2 className="font-bold text-xl">Biometric / Passkey</h2>
-            <p className="text-sm text-[var(--muted)] mt-2">
-              Aktifkan setelah masuk dengan Gmail atau PIN. Browser akan memakai passkey perangkat seperti Windows Hello, Face ID, Touch ID, atau kunci layar yang tersedia.
-            </p>
-            {user?.biometric_device_name && (
-              <p className="text-sm mt-3">Perangkat aktif: <b>{user.biometric_device_name}</b></p>
-            )}
-            {bioMsg && <p className="text-sm text-[var(--ink)] mt-3">{bioMsg}</p>}
-          </div>
-          <div className="w-full lg:w-auto flex flex-col sm:flex-row gap-2">
-            {user?.biometric_enabled ? (
-              <button onClick={disableBiometric} disabled={bioBusy} className="tap btn-outline px-5 font-semibold disabled:opacity-50">
-                Nonaktifkan
-              </button>
-            ) : (
-              <button onClick={enableBiometric} disabled={bioBusy || !biometricSupported} className="tap btn-primary px-5 font-semibold disabled:opacity-50">
-                {bioBusy ? "Memproses..." : "Aktifkan Biometric"}
-              </button>
-            )}
-          </div>
-        </div>
-      </section>
     </div>
   );
 }

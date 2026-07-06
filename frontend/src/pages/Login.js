@@ -1,113 +1,22 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { Fingerprint, ArrowRight, Anchor, ShieldCheck, KeyRound } from "lucide-react";
-import api, { API, ROLE_LABELS } from "@/lib/api";
-import { useAuth } from "@/context/AuthContext";
+import { Anchor, ShieldCheck } from "lucide-react";
+import { API } from "@/lib/api";
 
 function startGoogleLogin() {
   window.location.href = `${API}/auth/google/start?redirect=${encodeURIComponent("/dashboard")}`;
 }
 
-const DEMO_ROLES = ["NELAYAN", "PETUGAS_LAPANG", "ADMIN", "PETUGAS_DINAS"];
-
-function bufferToBase64url(buffer) {
-  const bytes = new Uint8Array(buffer);
-  let binary = "";
-  bytes.forEach((byte) => { binary += String.fromCharCode(byte); });
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
-}
-
 export default function Login() {
-  const navigate = useNavigate();
-  const { setUser } = useAuth();
-  const [mode, setMode] = useState("main"); // main | pin
-  const [pinEmail, setPinEmail] = useState("");
-  const [pin, setPin] = useState("");
-  const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
-  const [biometricSupported, setBiometricSupported] = useState(false);
 
-  useEffect(() => {
-    let alive = true;
-    async function detectBiometric() {
-      const hasWebAuthn = typeof window !== "undefined" && Boolean(window.PublicKeyCredential && navigator.credentials);
-      if (!hasWebAuthn || !window.isSecureContext) {
-        if (alive) setBiometricSupported(false);
-        return;
-      }
-      try {
-        const available = await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
-        if (alive) setBiometricSupported(Boolean(available));
-      } catch {
-        if (alive) setBiometricSupported(false);
-      }
-    }
-    detectBiometric();
-    return () => { alive = false; };
-  }, []);
-
-  const demoLogin = async (role) => {
+  const continueWithGoogle = () => {
     setBusy(true);
-    try {
-      const res = await api.post("/auth/demo", { role });
-      setUser(res.data);
-      navigate("/dashboard", { state: { user: res.data } });
-    } catch {
-      setErr("Gagal masuk demo");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const pinLogin = async () => {
-    setErr("");
-    setBusy(true);
-    try {
-      const res = await api.post("/auth/pin/login", { email: pinEmail, pin });
-      setUser(res.data);
-      navigate("/dashboard", { state: { user: res.data } });
-    } catch (e) {
-      setErr(e?.response?.data?.detail || "Email atau PIN salah");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const biometricLogin = async () => {
-    setErr("");
-    if (!biometricSupported) {
-      setErr("Perangkat ini belum mendukung biometric. Gunakan PIN sebagai fallback.");
-      return;
-    }
-    setBusy(true);
-    try {
-      const challenge = crypto.getRandomValues(new Uint8Array(32));
-      const credential = await navigator.credentials.get({
-        publicKey: {
-          challenge,
-          userVerification: "required",
-          timeout: 60000,
-        },
-      });
-      if (!credential?.rawId) {
-        throw new Error("Credential biometric tidak ditemukan");
-      }
-      const res = await api.post("/auth/biometric/login", {
-        credential_id: bufferToBase64url(credential.rawId),
-      });
-      setUser(res.data);
-      navigate("/dashboard", { state: { user: res.data } });
-    } catch (e) {
-      setErr(e?.response?.data?.detail || "Biometric dibatalkan/gagal. Gunakan PIN jika perangkat ini belum terdaftar.");
-    } finally {
-      setBusy(false);
-    }
+    startGoogleLogin();
   };
 
   return (
     <div className="min-h-screen grid grid-cols-1 lg:grid-cols-12">
-      {/* Left brand panel */}
       <div className="lg:col-span-7 border-b lg:border-b-0 lg:border-r hairline px-4 sm:px-8 lg:px-16 py-10 lg:py-0 flex flex-col justify-between">
         <div className="flex items-center gap-3 pt-2">
           <div className="w-9 h-9 bg-[var(--ink)] text-white flex items-center justify-center">
@@ -134,104 +43,30 @@ export default function Login() {
         </div>
       </div>
 
-      {/* Right auth panel */}
       <div className="lg:col-span-5 px-4 sm:px-8 lg:px-14 py-10 sm:py-12 flex items-center">
         <motion.div
-          initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           className="w-full max-w-md mx-auto"
         >
-          {mode === "main" && (
-            <div data-testid="login-main">
-              <p className="mono-label mb-2">Daftar / Masuk</p>
-              <h2 className="swiss-display text-3xl mb-3">Mulai dengan Gmail.</h2>
-              <p className="text-sm text-[var(--muted)] mb-6">
-                Akun baru otomatis dibuat saat pertama kali masuk dengan OAuth Google.
-              </p>
+          <div data-testid="login-main">
+            <p className="mono-label mb-2">Daftar / Masuk</p>
+            <h2 className="swiss-display text-3xl mb-3">Mulai dengan Gmail.</h2>
+            <p className="text-sm text-[var(--muted)] mb-6">
+              Akun baru otomatis dibuat saat pertama kali masuk dengan OAuth Google.
+            </p>
 
-              <button
-                data-testid="google-login-btn"
-                onClick={startGoogleLogin}
-                className="tap w-full btn-primary flex items-center justify-center gap-3 font-semibold text-[15px] mb-3"
-              >
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" className="w-5 h-5 bg-white rounded-sm" />
-                Lanjutkan dengan Gmail
-              </button>
-
-              <button
-                data-testid="biometric-login-btn"
-                onClick={biometricLogin}
-                disabled={busy}
-                className="tap w-full btn-outline flex items-center justify-center gap-2 font-semibold text-[15px]"
-              >
-                <Fingerprint size={18} /> Masuk dengan Biometric
-              </button>
-
-              <button
-                data-testid="pin-mode-btn"
-                onClick={() => { setMode("pin"); setErr(""); }}
-                className="tap w-full mt-3 border hairline px-4 py-3 flex items-center justify-center gap-2 font-semibold text-[15px] hover:bg-[var(--lavender)] transition-colors"
-              >
-                <KeyRound size={18} /> Masuk dengan PIN
-              </button>
-
-              {err && <p className="text-[var(--danger)] text-sm mt-3" data-testid="login-error">{err}</p>}
-
-              <div className="flex items-center gap-3 my-8">
-                <div className="h-px flex-1 bg-[var(--line)]" />
-                <span className="mono-label">Akses Demo Cepat</span>
-                <div className="h-px flex-1 bg-[var(--line)]" />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {DEMO_ROLES.map((r) => (
-                  <button
-                    key={r}
-                    data-testid={`demo-${r}-btn`}
-                    disabled={busy}
-                    onClick={() => demoLogin(r)}
-                    className="text-left border hairline p-3 min-h-[72px] hover:bg-[var(--lavender)] transition-colors disabled:opacity-50"
-                  >
-                    <span className="block text-[13px] font-semibold leading-tight">{ROLE_LABELS[r]}</span>
-                    <span className="mono-label flex items-center gap-1 mt-1">masuk <ArrowRight size={11} /></span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {mode === "pin" && (
-            <div data-testid="login-pin">
-              <p className="mono-label mb-2">Fallback</p>
-              <h2 className="swiss-display text-3xl mb-8">Masuk dengan PIN.</h2>
-              <label className="mono-label">Email</label>
-              <input
-                data-testid="pin-email-input"
-                value={pinEmail} onChange={(e) => setPinEmail(e.target.value)}
-                placeholder="email@anda.id"
-                className="field tap w-full px-4 mt-2 mb-4 text-[15px]"
-              />
-              <label className="mono-label">PIN 6 Angka</label>
-              <input
-                data-testid="pin-input"
-                value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                inputMode="numeric" placeholder="••••••"
-                className="field tap w-full px-4 mt-2 mb-4 text-[15px]"
-              />
-              {err && <p className="text-[var(--danger)] text-sm mb-3" data-testid="pin-error">{err}</p>}
-              <button
-                data-testid="pin-submit-btn"
-                disabled={busy}
-                onClick={pinLogin}
-                className="tap w-full btn-primary font-semibold text-[15px] disabled:opacity-50"
-              >
-                Masuk
-              </button>
-              <button onClick={() => { setMode("main"); setErr(""); }} className="mono-label mt-5 mx-auto block">
-                ← Kembali
-              </button>
-            </div>
-          )}
+            <button
+              data-testid="google-login-btn"
+              onClick={continueWithGoogle}
+              disabled={busy}
+              className="tap w-full btn-primary flex items-center justify-center gap-3 font-semibold text-[15px] disabled:opacity-50"
+            >
+              <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" className="w-5 h-5 bg-white rounded-sm" />
+              {busy ? "Mengalihkan..." : "Lanjutkan dengan Gmail"}
+            </button>
+          </div>
         </motion.div>
       </div>
     </div>
