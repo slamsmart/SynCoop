@@ -84,7 +84,7 @@ export default function Login() {
               disabled={busy}
               className="tap w-full btn-primary flex items-center justify-center gap-3 font-semibold text-[15px] disabled:opacity-50"
             >
-              <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" className="w-5 h-5 bg-white rounded-sm" />
+              <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" className="w-5 h-5" />
               {busy ? "Mengalihkan..." : "Daftar atau masuk dengan Gmail"}
             </button>
 
