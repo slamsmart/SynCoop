@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Anchor, ArrowRight, Download, Fish, Fuel,
-  MessageSquareText, ReceiptText, ShieldCheck, Ship, Users,
+  LogOut, MessageSquareText, ReceiptText, ShieldCheck, Ship, UserCircle, Users,
 } from "lucide-react";
 import api, { API, fmtRp, ROLE_LABELS } from "@/lib/api";
 import { Badge } from "@/components/ui-kit";
@@ -45,7 +45,7 @@ export default function PublicPortal() {
   const [busy, setBusy] = useState(false);
   const [loginError, setLoginError] = useState("");
   const navigate = useNavigate();
-  const { setUser } = useAuth();
+  const { user, setUser, logout, loggingOut } = useAuth();
 
   useEffect(() => {
     api.get("/public/portal").then((r) => setData(r.data)).catch(() => {});
@@ -90,6 +90,7 @@ export default function PublicPortal() {
   };
 
   const portal = { ...DEFAULT_PORTAL, ...(data.portal || {}) };
+  const firstName = user?.name?.split(" ")?.[0] || "Akun";
 
   return (
     <div className="min-h-screen bg-white">
@@ -98,11 +99,33 @@ export default function PublicPortal() {
           <div className="w-9 h-9 bg-[var(--sea)] text-white flex items-center justify-center"><Anchor size={18} /></div>
           <div><p className="font-extrabold leading-none">SynCoop</p><p className="mono-label">Koperasi Digital Nelayan</p></div>
         </div>
-        {installPrompt && (
-          <button onClick={installApp} className="btn-outline px-3 py-2 text-sm font-semibold hidden sm:flex items-center gap-2">
-            <Download size={15} /> Install
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {user ? (
+            <>
+              <button
+                type="button"
+                onClick={() => navigate("/dashboard")}
+                className="btn-outline px-3 py-2 text-sm font-semibold flex items-center gap-2"
+              >
+                <UserCircle size={16} /> Dashboard ({firstName})
+              </button>
+              <button
+                type="button"
+                onClick={logout}
+                disabled={loggingOut}
+                className="w-10 h-10 flex items-center justify-center text-[var(--muted)] hover:text-[var(--danger)] disabled:opacity-50"
+                aria-label="Keluar"
+                title="Keluar"
+              >
+                <LogOut size={18} />
+              </button>
+            </>
+          ) : installPrompt && (
+            <button onClick={installApp} className="btn-outline px-3 py-2 text-sm font-semibold hidden sm:flex items-center gap-2">
+              <Download size={15} /> Install
+            </button>
+          )}
+        </div>
       </header>
 
       <main>
@@ -119,10 +142,10 @@ export default function PublicPortal() {
               <div className="flex flex-wrap gap-3 mt-8">
                 <button
                   type="button"
-                  onClick={startGoogleLogin}
+                  onClick={() => user ? navigate("/dashboard") : startGoogleLogin()}
                   className="tap btn-primary px-5 font-semibold flex items-center gap-2"
                 >
-                  Daftar <ArrowRight size={16} />
+                  {user ? `Dashboard (${firstName})` : "Daftar"} <ArrowRight size={16} />
                 </button>
                 <a href="#layanan" className="tap btn-outline px-5 font-semibold flex items-center gap-2">Ajukan Layanan</a>
               </div>
@@ -135,6 +158,8 @@ export default function PublicPortal() {
                 busy={busy}
                 loginError={loginError}
                 onDemoLogin={demoLogin}
+                user={user}
+                onDashboard={() => navigate("/dashboard")}
               />
             </div>
           </div>
@@ -204,47 +229,71 @@ export default function PublicPortal() {
   );
 }
 
-function LoginPanel({ installPrompt, onInstall, busy, loginError, onDemoLogin }) {
+function LoginPanel({ installPrompt, onInstall, busy, loginError, onDemoLogin, user, onDashboard }) {
+  const firstName = user?.name?.split(" ")?.[0] || "Akun";
+
   return (
     <div className="bg-white border hairline p-5 sm:p-6 lg:p-8 shadow-[0_24px_80px_rgba(11,11,11,0.06)]">
-      <div className="mb-6">
-        <p className="mono-label mb-2">Daftar atau masuk</p>
-        <h2 className="swiss-display text-3xl sm:text-4xl leading-none">Masuk dengan Gmail</h2>
-        <p className="text-sm text-[var(--muted)] mt-3">
-          Akun baru otomatis dibuat saat pertama kali Anda masuk dengan akun Google.
-        </p>
-      </div>
+      {user ? (
+        <>
+          <div className="mb-6">
+            <p className="mono-label mb-2">{ROLE_LABELS[user.role]}</p>
+            <h2 className="swiss-display text-3xl sm:text-4xl leading-none">Masih masuk</h2>
+            <p className="text-sm text-[var(--muted)] mt-3">
+              Anda sedang memakai akun {user.name}. Kembali ke dashboard tanpa keluar.
+            </p>
+          </div>
 
-      <button
-        onClick={startGoogleLogin}
-        disabled={busy}
-        className="tap w-full btn-primary flex items-center justify-center gap-3 font-semibold text-[15px] mb-3 disabled:opacity-50"
-      >
-        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" className="w-5 h-5" />
-        Daftar atau masuk dengan Gmail
-      </button>
-
-      <div className="my-5 flex items-center gap-3">
-        <div className="h-px flex-1 bg-[var(--line)]" />
-        <span className="mono-label whitespace-nowrap">Akses Demo Cepat</span>
-        <div className="h-px flex-1 bg-[var(--line)]" />
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        {DEMO_ROLES.map((role) => (
           <button
-            key={role}
             type="button"
-            onClick={() => onDemoLogin(role)}
-            disabled={busy}
-            className="tap btn-outline min-h-12 px-3 flex items-center justify-between gap-2 text-left text-sm font-semibold disabled:opacity-50"
+            onClick={onDashboard}
+            className="tap w-full btn-primary flex items-center justify-center gap-3 font-semibold text-[15px]"
           >
-            <span>{ROLE_LABELS[role]}</span>
-            <ArrowRight size={15} className="shrink-0" />
+            <UserCircle size={18} /> Dashboard ({firstName})
           </button>
-        ))}
-      </div>
-      {loginError && <p className="text-sm text-red-600 mt-3">{loginError}</p>}
+        </>
+      ) : (
+        <>
+          <div className="mb-6">
+            <p className="mono-label mb-2">Daftar atau masuk</p>
+            <h2 className="swiss-display text-3xl sm:text-4xl leading-none">Masuk dengan Gmail</h2>
+            <p className="text-sm text-[var(--muted)] mt-3">
+              Akun baru otomatis dibuat saat pertama kali Anda masuk dengan akun Google.
+            </p>
+          </div>
+
+          <button
+            onClick={startGoogleLogin}
+            disabled={busy}
+            className="tap w-full btn-primary flex items-center justify-center gap-3 font-semibold text-[15px] mb-3 disabled:opacity-50"
+          >
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" className="w-5 h-5" />
+            Daftar atau masuk dengan Gmail
+          </button>
+
+          <div className="my-5 flex items-center gap-3">
+            <div className="h-px flex-1 bg-[var(--line)]" />
+            <span className="mono-label whitespace-nowrap">Akses Demo Cepat</span>
+            <div className="h-px flex-1 bg-[var(--line)]" />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {DEMO_ROLES.map((role) => (
+              <button
+                key={role}
+                type="button"
+                onClick={() => onDemoLogin(role)}
+                disabled={busy}
+                className="tap btn-outline min-h-12 px-3 flex items-center justify-between gap-2 text-left text-sm font-semibold disabled:opacity-50"
+              >
+                <span>{ROLE_LABELS[role]}</span>
+                <ArrowRight size={15} className="shrink-0" />
+              </button>
+            ))}
+          </div>
+          {loginError && <p className="text-sm text-red-600 mt-3">{loginError}</p>}
+        </>
+      )}
 
       {installPrompt && (
         <button onClick={onInstall} className="tap w-full btn-outline flex sm:hidden items-center justify-center gap-2 font-semibold text-[15px] mt-3">
