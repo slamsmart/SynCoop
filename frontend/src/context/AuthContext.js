@@ -6,6 +6,7 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   const checkAuth = useCallback(async () => {
     try {
@@ -19,22 +20,17 @@ export function AuthProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    // CRITICAL: If returning from OAuth callback, skip the /me check.
-    if (window.location.hash?.includes("session_id=")) {
-      setLoading(false);
-      return;
-    }
     checkAuth();
   }, [checkAuth]);
 
   const logout = async () => {
+    setLoggingOut(true);
     try { await api.post("/auth/logout"); } catch {}
-    setUser(null);
-    window.location.href = "/login";
+    window.location.replace("/");
   };
 
   return (
-    <AuthContext.Provider value={{ user, setUser, loading, checkAuth, logout }}>
+    <AuthContext.Provider value={{ user, setUser, loading, loggingOut, checkAuth, logout }}>
       {children}
     </AuthContext.Provider>
   );

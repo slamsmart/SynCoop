@@ -28,7 +28,7 @@ function MasterSheet({ isAdmin }) {
     <div data-testid="debts-master-page">
       <PageHeader kicker="Lembar Induk Piutang" title="Master Piutang"
         desc="Agregasi seluruh nelayan dengan status kurang bayar beserta alasan penundaan." />
-      <div className="grid grid-cols-2 gap-px bg-[var(--line)] border hairline mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-[var(--line)] border hairline mb-8">
         <div className="bg-white"><StatCard label="Total Piutang" value={fmtRp(data.total_outstanding)} danger={data.total_outstanding > 0} /></div>
         <div className="bg-white"><StatCard label="Jumlah Penunggak" value={data.count} index={1} /></div>
       </div>
@@ -86,7 +86,7 @@ function MyDebts() {
     <div data-testid="my-debts-page">
       <PageHeader kicker="Portal Transparansi" title="Utang Saya"
         desc="Lihat sisa kurang bayar Anda. Wajib mengisi alasan penundaan pembayaran." />
-      <div className="border hairline p-6 mb-8 flex items-center gap-4">
+      <div className="border hairline p-4 sm:p-6 mb-8 flex flex-col sm:flex-row sm:items-center gap-4">
         <div className="w-12 h-12 bg-[var(--ink)] text-white flex items-center justify-center"><Wallet size={22} /></div>
         <div>
           <p className="mono-label">Total Kurang Bayar</p>
@@ -98,7 +98,7 @@ function MyDebts() {
         <div className="space-y-px bg-[var(--line)] border hairline">
           {trx.map((t) => (
             <div key={t.transaction_id} data-testid="my-debt-row" className="bg-white p-5">
-              <div className="flex items-start justify-between gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                 <div>
                   <p className="font-semibold">{t.vessel_name} · {t.liters_bought} L</p>
                   <p className="text-sm text-[var(--muted)] mt-1">Total {fmtRp(t.total_price)} · Dibayar {fmtRp(t.amount_paid)}</p>

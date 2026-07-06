@@ -45,7 +45,7 @@ export default function Vessels() {
       />
 
       {showForm && (
-        <div data-testid="vessel-form" className="border hairline p-6 mb-8 grid grid-cols-1 md:grid-cols-2 gap-4 fade-up">
+        <div data-testid="vessel-form" className="border hairline p-4 sm:p-6 mb-8 grid grid-cols-1 md:grid-cols-2 gap-4 fade-up">
           <div>
             <label className="mono-label">Email Pemilik (Nelayan)</label>
             <input data-testid="vf-owner" className="field tap w-full px-4 mt-2" placeholder="nelayan@demo.syncoop.id"
@@ -84,8 +84,8 @@ export default function Vessels() {
             const pct = Math.min(100, (v.used_quota / v.monthly_quota_max) * 100);
             const low = v.remaining_quota <= 50;
             return (
-              <div key={v.vessel_id} data-testid="vessel-card" className="bg-white p-6">
-                <div className="flex items-start justify-between">
+              <div key={v.vessel_id} data-testid="vessel-card" className="bg-white p-5 sm:p-6">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                   <div className="flex items-center gap-2">
                     <Ship size={18} />
                     <span className="font-semibold">{v.vessel_name}</span>

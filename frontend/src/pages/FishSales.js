@@ -11,7 +11,7 @@ export default function FishSales() {
   const [vessels, setVessels] = useState([]);
   const [fish, setFish] = useState([]);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ vessel_id: "", fish_id: "", weight_kg: "", price_per_kg: "", payment_method: "CASH", notes: "" });
+  const [form, setForm] = useState({ vessel_id: "", fish_id: "", weight_kg: "", price_per_kg: "", payment_method: "CASH", payment_ref: "", notes: "" });
   const [err, setErr] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -40,10 +40,11 @@ export default function FishSales() {
         weight_kg: parseFloat(form.weight_kg),
         price_per_kg: form.price_per_kg ? parseFloat(form.price_per_kg) : null,
         payment_method: form.payment_method,
+        payment_ref: form.payment_ref || null,
         notes: form.notes || null,
       });
       setShowForm(false);
-      setForm({ vessel_id: "", fish_id: "", weight_kg: "", price_per_kg: "", payment_method: "CASH", notes: "" });
+      setForm({ vessel_id: "", fish_id: "", weight_kg: "", price_per_kg: "", payment_method: "CASH", payment_ref: "", notes: "" });
       load();
     } catch (e) {
       setErr(e?.response?.data?.detail || "Gagal mencatat lelang");
@@ -66,7 +67,7 @@ export default function FishSales() {
       />
 
       {showForm && isStaff && (
-        <div data-testid="sale-form" className="border hairline p-6 mb-8 fade-up">
+        <div data-testid="sale-form" className="border hairline p-4 sm:p-6 mb-8 fade-up">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="mono-label">Nelayan (via Perahu)</label>
@@ -100,13 +101,27 @@ export default function FishSales() {
 
           <div className="mt-5">
             <label className="mono-label">Metode Pembayaran</label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 mt-2">
               <button type="button" data-testid="pay-cash"
                 onClick={() => setForm({ ...form, payment_method: "CASH" })}
                 className={`text-left border p-4 transition-colors ${form.payment_method === "CASH" ? "border-[var(--ink)] bg-[var(--lavender)]" : "hairline"}`}>
                 <Banknote size={18} />
                 <p className="font-semibold mt-2">Pembayaran Tunai</p>
                 <p className="text-sm text-[var(--muted)]">Cash penuh ke nelayan.</p>
+              </button>
+              <button type="button"
+                onClick={() => setForm({ ...form, payment_method: "QRIS" })}
+                className={`text-left border p-4 transition-colors ${form.payment_method === "QRIS" ? "border-[var(--ink)] bg-[var(--lavender)]" : "hairline"}`}>
+                <Banknote size={18} />
+                <p className="font-semibold mt-2">QRIS</p>
+                <p className="text-sm text-[var(--muted)]">Dicatat manual.</p>
+              </button>
+              <button type="button"
+                onClick={() => setForm({ ...form, payment_method: "TRANSFER" })}
+                className={`text-left border p-4 transition-colors ${form.payment_method === "TRANSFER" ? "border-[var(--ink)] bg-[var(--lavender)]" : "hairline"}`}>
+                <Banknote size={18} />
+                <p className="font-semibold mt-2">Transfer</p>
+                <p className="text-sm text-[var(--muted)]">Ref bank opsional.</p>
               </button>
               <button type="button" data-testid="pay-potong"
                 onClick={() => setForm({ ...form, payment_method: "POTONG_UTANG" })}
@@ -116,6 +131,8 @@ export default function FishSales() {
                 <p className="text-sm text-[var(--muted)]">Tebasan/Ijon — kurangi utang dulu, sisa tunai.</p>
               </button>
             </div>
+            <input className="field tap w-full px-4 mt-3" placeholder="Ref pembayaran/nota (opsional)"
+              value={form.payment_ref} onChange={(e) => setForm({ ...form, payment_ref: e.target.value })} />
           </div>
 
           <div className="border hairline lav p-4 mt-5 flex flex-wrap gap-x-8 gap-y-2 text-sm">
@@ -126,7 +143,7 @@ export default function FishSales() {
                 <span>Tunai diterima: <b className="text-[var(--ok)]">{fmtRp(Math.max(0, gross - selVessel.owner_outstanding))}</b></span>
               </>
             )}
-            {form.payment_method === "CASH" && <span>Tunai diterima: <b className="text-[var(--ok)]">{fmtRp(gross)}</b></span>}
+            {form.payment_method !== "POTONG_UTANG" && <span>Dibayar: <b className="text-[var(--ok)]">{fmtRp(gross)}</b></span>}
           </div>
 
           {err && <p className="text-[var(--danger)] text-sm mt-3">{err}</p>}
@@ -143,8 +160,8 @@ export default function FishSales() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-semibold">{s.fish_name} · {s.weight_kg} kg</span>
-                  <Badge tone={s.payment_method === "CASH" ? "ok" : "ink"}>
-                    {s.payment_method === "CASH" ? "Tunai" : "Potong Utang"}
+                  <Badge tone={s.payment_method === "POTONG_UTANG" ? "ink" : "ok"}>
+                    {s.payment_method === "POTONG_UTANG" ? "Potong Utang" : s.payment_method}
                   </Badge>
                 </div>
                 <p className="text-sm text-[var(--muted)] mt-1">

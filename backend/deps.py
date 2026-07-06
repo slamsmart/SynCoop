@@ -27,6 +27,8 @@ async def get_current_user(request: Request) -> dict:
     user = await users.find_one({"user_id": session["user_id"]}, {"_id": 0, "pin_hash": 0})
     if not user:
         raise HTTPException(status_code=401, detail="User not found")
+    if session.get("role"):
+        user = {**user, "role": session["role"]}
     return user
 
 

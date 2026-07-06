@@ -35,7 +35,7 @@ export default function FishPrices() {
       <PageHeader kicker="Konfigurasi Kalkulator" title="Harga Ikan & Bagi Hasil"
         desc="Kelola harga pasar per jenis ikan dan persentase bagi hasil koperasi." />
 
-      <div className="border hairline p-6 mb-8 flex flex-col sm:flex-row sm:items-end gap-4">
+      <div className="border hairline p-4 sm:p-6 mb-8 flex flex-col sm:flex-row sm:items-end gap-4">
         <div className="flex-1">
           <label className="mono-label flex items-center gap-1"><Percent size={12} /> Bagi Hasil Koperasi (%)</label>
           <input data-testid="sharing-input" type="number" className="field tap w-full px-4 mt-2" value={percent} onChange={(e) => setPercent(e.target.value)} />
@@ -44,7 +44,7 @@ export default function FishPrices() {
         <button data-testid="sharing-save" onClick={saveSharing} className="tap btn-primary px-5 font-semibold flex items-center gap-2"><Save size={16} /> {savedMsg || "Simpan"}</button>
       </div>
 
-      <div className="border hairline p-6 mb-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="border hairline p-4 sm:p-6 mb-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="sm:col-span-1">
           <label className="mono-label">Nama Ikan</label>
           <input data-testid="fish-name" className="field tap w-full px-4 mt-2" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />

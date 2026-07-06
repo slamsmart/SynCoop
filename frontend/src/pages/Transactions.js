@@ -12,7 +12,7 @@ export default function Transactions() {
   const [vessels, setVessels] = useState([]);
   const [tab, setTab] = useState("bbm");
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ vessel_id: "", liters_bought: "", amount_paid: "" });
+  const [form, setForm] = useState({ vessel_id: "", liters_bought: "", amount_paid: "", payment_method: "CASH", payment_ref: "" });
   const [quotaAlert, setQuotaAlert] = useState(null);
   const [validateFor, setValidateFor] = useState(null);
   const [photoUrl, setPhotoUrl] = useState("");
@@ -39,9 +39,11 @@ export default function Transactions() {
         vessel_id: form.vessel_id,
         liters_bought: parseFloat(form.liters_bought),
         amount_paid: parseFloat(form.amount_paid || 0),
+        payment_method: form.payment_method,
+        payment_ref: form.payment_ref || null,
       });
       setShowForm(false);
-      setForm({ vessel_id: "", liters_bought: "", amount_paid: "" });
+      setForm({ vessel_id: "", liters_bought: "", amount_paid: "", payment_method: "CASH", payment_ref: "" });
       load();
     } catch (e) {
       const d = e?.response?.data?.detail;
@@ -99,11 +101,11 @@ export default function Transactions() {
       {isAdmin && (
         <div className="flex gap-px bg-[var(--line)] border hairline mb-8 w-full sm:w-auto sm:inline-flex">
           <button data-testid="tab-bbm" onClick={() => setTab("bbm")}
-            className={`px-6 h-12 text-sm font-semibold transition-colors ${tab === "bbm" ? "bg-[var(--ink)] text-white" : "bg-white"}`}>
+            className={`flex-1 sm:flex-none px-3 sm:px-6 h-12 text-sm font-semibold transition-colors ${tab === "bbm" ? "bg-[var(--ink)] text-white" : "bg-white"}`}>
             Transaksi BBM {trx.filter((t) => !t.is_validated).length > 0 && `(${trx.filter((t) => !t.is_validated).length})`}
           </button>
           <button data-testid="tab-lelang" onClick={() => setTab("lelang")}
-            className={`px-6 h-12 text-sm font-semibold transition-colors ${tab === "lelang" ? "bg-[var(--ink)] text-white" : "bg-white"}`}>
+            className={`flex-1 sm:flex-none px-3 sm:px-6 h-12 text-sm font-semibold transition-colors ${tab === "lelang" ? "bg-[var(--ink)] text-white" : "bg-white"}`}>
             Lelang Ikan {sales.filter((s) => !s.is_validated).length > 0 && `(${sales.filter((s) => !s.is_validated).length})`}
           </button>
         </div>
@@ -138,7 +140,7 @@ export default function Transactions() {
       ) : (
       <>
       {showForm && (
-        <div data-testid="trx-form" className="border hairline p-6 mb-8 grid grid-cols-1 md:grid-cols-3 gap-4 fade-up">
+        <div data-testid="trx-form" className="border hairline p-4 sm:p-6 mb-8 grid grid-cols-1 md:grid-cols-3 gap-4 fade-up">
           <div className="md:col-span-3">
             <label className="mono-label">Perahu Nelayan</label>
             <select data-testid="trx-vessel" className="field tap w-full px-4 mt-2"
@@ -163,6 +165,20 @@ export default function Transactions() {
             <label className="mono-label">Nominal Dibayar (Rp)</label>
             <input data-testid="trx-paid" type="number" className="field tap w-full px-4 mt-2" placeholder="0 = belum bayar"
               value={form.amount_paid} onChange={(e) => setForm({ ...form, amount_paid: e.target.value })} />
+          </div>
+          <div>
+            <label className="mono-label">Metode Bayar</label>
+            <select className="field tap w-full px-4 mt-2" value={form.payment_method} onChange={(e) => setForm({ ...form, payment_method: e.target.value })}>
+              <option value="CASH">Tunai</option>
+              <option value="QRIS">QRIS manual</option>
+              <option value="TRANSFER">Transfer</option>
+              <option value="PIUTANG">Piutang</option>
+            </select>
+          </div>
+          <div className="md:col-span-2">
+            <label className="mono-label">Ref Pembayaran (opsional)</label>
+            <input className="field tap w-full px-4 mt-2" placeholder="No. QRIS/transfer/nota"
+              value={form.payment_ref} onChange={(e) => setForm({ ...form, payment_ref: e.target.value })} />
           </div>
           <div className="flex items-end">
             <button data-testid="trx-submit" onClick={submit} disabled={!form.vessel_id || !form.liters_bought || submitting}
@@ -239,7 +255,7 @@ export default function Transactions() {
                 <img src={photoUrl} alt="bukti" className="w-full h-44 object-cover" data-testid="receipt-preview" />
               </div>
             ) : (
-              <label data-testid="receipt-file-label" className="mt-5 border hairline border-dashed p-8 flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-[var(--lavender)] transition-colors">
+              <label data-testid="receipt-file-label" className="mt-5 border hairline border-dashed p-5 sm:p-8 flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-[var(--lavender)] transition-colors">
                 {uploading ? <Loader2 size={26} className="animate-spin" /> : <Upload size={26} />}
                 <span className="text-sm font-semibold">{uploading ? "Mengunggah…" : "Pilih / Foto Bukti Nota"}</span>
                 <span className="mono-label">JPG / PNG</span>
@@ -264,7 +280,7 @@ function Overlay({ children, onClose }) {
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <motion.div initial={{ scale: 0.95, y: 10 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0 }}
-        onClick={(e) => e.stopPropagation()} className="bg-white border hairline p-8 w-full max-w-md relative">
+        onClick={(e) => e.stopPropagation()} className="bg-white border hairline p-5 sm:p-8 w-full max-w-md relative">
         <button onClick={onClose} className="absolute top-4 right-4 text-[var(--muted)]"><X size={20} /></button>
         {children}
       </motion.div>

@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
 import {
   LayoutGrid, ShieldCheck, Ship, Wallet, Calculator, Bell, FileCheck2,
   Fish, Users, Anchor, LogOut, Menu, X, ClipboardList, Gavel,
+  HandCoins, Boxes, BarChart3, MessageSquareText, Settings,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { ROLE_LABELS } from "@/lib/api";
@@ -12,26 +13,36 @@ const MENU = {
   NELAYAN: [
     { to: "/dashboard", label: "Dashboard", icon: LayoutGrid },
     { to: "/membership", label: "Keanggotaan", icon: ShieldCheck },
+    { to: "/savings-loans", label: "Simpan Pinjam", icon: HandCoins },
     { to: "/vessels", label: "Perahu & Kuota", icon: Ship },
     { to: "/debts", label: "Utang Saya", icon: Wallet },
     { to: "/fish-sales", label: "Penjualan Ikan", icon: Gavel },
     { to: "/calculator", label: "Kalkulator Ikan", icon: Calculator },
+    { to: "/services", label: "Layanan", icon: MessageSquareText },
     { to: "/notifications", label: "Notifikasi", icon: Bell },
   ],
   PETUGAS_LAPANG: [
     { to: "/dashboard", label: "Dashboard", icon: LayoutGrid },
     { to: "/transactions", label: "Catat Transaksi", icon: ClipboardList },
     { to: "/fish-sales", label: "Lelang Ikan", icon: Gavel },
+    { to: "/inventory", label: "Inventori", icon: Boxes },
+    { to: "/services", label: "Layanan", icon: MessageSquareText },
     { to: "/vessels", label: "Data Perahu", icon: Ship },
     { to: "/debts", label: "Master Piutang", icon: Wallet },
   ],
   ADMIN: [
     { to: "/dashboard", label: "Dashboard", icon: LayoutGrid },
+    { to: "/membership", label: "Keanggotaan", icon: ShieldCheck },
+    { to: "/savings-loans", label: "Simpan Pinjam", icon: HandCoins },
     { to: "/transactions", label: "Validasi Transaksi", icon: FileCheck2 },
     { to: "/fish-sales", label: "Lelang Ikan", icon: Gavel },
+    { to: "/inventory", label: "Inventori", icon: Boxes },
+    { to: "/reports", label: "Laporan", icon: BarChart3 },
+    { to: "/services", label: "Layanan", icon: MessageSquareText },
     { to: "/debts", label: "Master Piutang", icon: Wallet },
     { to: "/vessels", label: "Data Perahu", icon: Ship },
     { to: "/fish-prices", label: "Harga Ikan & Bagi Hasil", icon: Fish },
+    { to: "/page-settings", label: "Pengaturan Halaman", icon: Settings },
     { to: "/users", label: "Manajemen Pengguna", icon: Users },
     { to: "/notifications", label: "Notifikasi", icon: Bell },
   ],
@@ -42,8 +53,7 @@ const MENU = {
 };
 
 export default function Layout() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user, logout, loggingOut } = useAuth();
   const location = useLocation();
   const [open, setOpen] = useState(false);
   const [unread, setUnread] = useState(0);
@@ -61,7 +71,7 @@ export default function Layout() {
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
       {/* Mobile top bar */}
-      <div className="lg:hidden flex items-center justify-between px-5 h-16 border-b hairline sticky top-0 bg-white z-40">
+      <div className="lg:hidden flex items-center justify-between px-4 h-16 border-b hairline sticky top-0 bg-white z-40">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-[var(--ink)] text-white flex items-center justify-center"><Anchor size={16} /></div>
           <span className="mono-label !text-[var(--ink)]">SynCoop</span>
@@ -81,7 +91,7 @@ export default function Layout() {
           </div>
         </div>
 
-        <nav className="px-3 py-5 space-y-1">
+        <nav className="px-3 py-5 flex flex-col gap-1">
           <p className="mono-label px-3 pb-2">Menu</p>
           {menu.map(({ to, label, icon: Icon }) => (
             <NavLink
@@ -112,15 +122,16 @@ export default function Layout() {
           <button
             data-testid="logout-btn"
             onClick={logout}
-            className="flex items-center gap-2 px-3 h-10 w-full text-[13px] font-medium text-[var(--muted)] hover:text-[var(--danger)] transition-colors"
+            disabled={loggingOut}
+            className="flex items-center gap-2 px-3 h-10 w-full text-[13px] font-medium text-[var(--muted)] hover:text-[var(--danger)] transition-colors disabled:opacity-50"
           >
-            <LogOut size={16} /> Keluar
+            <LogOut size={16} /> {loggingOut ? "Keluar..." : "Keluar"}
           </button>
         </div>
       </aside>
 
       {/* Content */}
-      <main className="flex-1 min-w-0 px-6 lg:px-12 py-8 lg:py-12">
+      <main className="flex-1 min-w-0 w-full px-4 sm:px-6 lg:px-12 py-6 sm:py-8 lg:py-12">
         <Outlet />
       </main>
     </div>

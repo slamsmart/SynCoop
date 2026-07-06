@@ -36,7 +36,7 @@ export default function Calculator() {
         desc="Simulasikan estimasi pendapatan bersih setelah bagi hasil koperasi." />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-px bg-[var(--line)] border hairline">
-        <div className="bg-white p-8">
+        <div className="bg-white p-5 sm:p-8">
           <div className="flex items-center gap-2 mb-6"><Calc size={18} /><span className="mono-label">Input Tangkapan</span></div>
           <label className="mono-label">Jenis Ikan</label>
           <select data-testid="calc-fish" className="field tap w-full px-4 mt-2 mb-5" value={fishId} onChange={(e) => setFishId(e.target.value)}>
@@ -49,7 +49,7 @@ export default function Calculator() {
           {err && <p data-testid="calc-error" className="text-[var(--danger)] text-sm mt-3">{err}</p>}
         </div>
 
-        <div className="bg-white p-8">
+        <div className="bg-white p-5 sm:p-8">
           <span className="mono-label">Hasil Estimasi</span>
           {result ? (
             <motion.div data-testid="calc-result" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-6">

@@ -23,7 +23,7 @@ from database import (
 from starlette.responses import RedirectResponse
 import storage as objstore
 from models import (
-    User, PinSet, PinLogin, DemoLogin, BiometricRegister, KycSubmit, VesselCreate, Vessel,
+    User, PinSet, PinLogin, DemoLogin, BiometricRegister, BiometricLogin, KycSubmit, VesselCreate, Vessel,
     Transaction, TransactionCreate, ValidateTransaction, DebtReason, FishPriceCreate,
     FishCalcRequest, ProfitSharing, PublicPortalSettings, RoleUpdate, FishSaleCreate, now_utc, gen_id,
     SavingsEntryCreate, LoanCreate, LoanDecision, LoanPaymentCreate,
@@ -108,15 +108,18 @@ def normalize_stat_cards(cards) -> list:
     return normalized
 
 
-async def create_session(user_id: str) -> str:
+async def create_session(user_id: str, role: str | None = None) -> str:
     token = gen_id("sess") + gen_id("t")
     expires = now_utc() + timedelta(days=7)
-    await sessions.insert_one({
+    doc = {
         "user_id": user_id,
         "session_token": token,
         "expires_at": expires.isoformat(),
         "created_at": now_utc().isoformat(),
-    })
+    }
+    if role:
+        doc["role"] = role
+    await sessions.insert_one(doc)
     return token
 
 
@@ -183,6 +186,7 @@ async def new_user_doc(email: str, name: str, picture: str = None, role: str = "
         "is_kyc_approved": False,
         "kyc_status": "NONE",
         "has_pin": False,
+        "biometric_enabled": False,
         "phone": None, "nik": None, "address": None,
     }
 
@@ -287,7 +291,7 @@ async def google_callback(request: Request, code: str = Query(None), state: str 
     if not user:
         user = await new_user_doc(email, data.get("name", email), data.get("picture"))
         await users.insert_one(dict(user))
-    token = await create_session(user["user_id"])
+    token = await create_session(user["user_id"], user.get("role"))
     response = RedirectResponse(frontend_redirect_url(request.cookies.get("oauth_redirect")), status_code=302)
     set_session_cookie(response, token)
     response.delete_cookie("oauth_state", path="/")
@@ -323,7 +327,7 @@ async def pin_login(body: PinLogin, response: Response):
     user = await users.find_one({"email": body.email})
     if not user or not user.get("pin_hash") or not pwd.verify(body.pin, user["pin_hash"]):
         raise HTTPException(status_code=401, detail="Email atau PIN salah")
-    token = await create_session(user["user_id"])
+    token = await create_session(user["user_id"], user.get("role"))
     set_session_cookie(response, token)
     return public_user(user)
 
@@ -339,6 +343,20 @@ async def register_biometric(body: BiometricRegister, user: dict = Depends(get_c
         "biometric_registered_at": now_utc().isoformat(),
     }})
     return {"ok": True}
+
+@api.post("/auth/biometric/login")
+async def biometric_login(body: BiometricLogin, response: Response):
+    if not body.credential_id:
+        raise HTTPException(status_code=400, detail="Credential biometric tidak valid")
+    user = await users.find_one({
+        "biometric_enabled": True,
+        "biometric_credential_id": body.credential_id,
+    })
+    if not user:
+        raise HTTPException(status_code=401, detail="Biometric belum terdaftar untuk perangkat ini")
+    token = await create_session(user["user_id"], user.get("role"))
+    set_session_cookie(response, token)
+    return public_user(user)
 
 @api.post("/auth/biometric/disable")
 async def disable_biometric(user: dict = Depends(get_current_user)):
@@ -368,9 +386,10 @@ async def demo_login(body: DemoLogin, response: Response):
     if not user:
         user = await new_user_doc(email, name, role=role)
         await users.insert_one(dict(user))
-    token = await create_session(user["user_id"])
+    session_user = {**user, "role": role}
+    token = await create_session(user["user_id"], role)
     set_session_cookie(response, token)
-    return public_user(user)
+    return public_user(session_user)
 
 
 # ----------------------------- membership / KYC -----------------------------

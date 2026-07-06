@@ -47,6 +47,9 @@ class BiometricRegister(BaseModel):
     credential_id: str
     device_name: Optional[str] = None
 
+class BiometricLogin(BaseModel):
+    credential_id: str
+
 # ---------- KYC ----------
 class KycSubmit(BaseModel):
     nik: str
