@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Anchor, ArrowRight, Download, Fish, Fuel,
   MessageSquareText, ReceiptText, ShieldCheck, Ship, Users,
 } from "lucide-react";
-import api, { API, fmtRp } from "@/lib/api";
+import api, { API, fmtRp, ROLE_LABELS } from "@/lib/api";
 import { Badge } from "@/components/ui-kit";
+import { useAuth } from "@/context/AuthContext";
 
 function startGoogleLogin() {
   window.location.href = `${API}/auth/google/start?redirect=${encodeURIComponent("/dashboard")}`;
@@ -22,6 +24,7 @@ const DEFAULT_PORTAL = {
   ],
 };
 const STAT_ICONS = { Users, ReceiptText, Fuel, Ship };
+const DEMO_ROLES = ["NELAYAN", "PETUGAS_LAPANG", "ADMIN", "PETUGAS_DINAS"];
 
 function statValue(key, stats) {
   if (key === "transaction_value") return fmtRp(stats.transaction_value || 0);
@@ -39,6 +42,10 @@ export default function PublicPortal() {
   const [form, setForm] = useState({ contact_name: "", contact_phone: "", category: "Pendaftaran Anggota", subject: "", message: "" });
   const [sent, setSent] = useState("");
   const [installPrompt, setInstallPrompt] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [loginError, setLoginError] = useState("");
+  const navigate = useNavigate();
+  const { setUser } = useAuth();
 
   useEffect(() => {
     api.get("/public/portal").then((r) => setData(r.data)).catch(() => {});
@@ -67,6 +74,21 @@ export default function PublicPortal() {
       setForm({ contact_name: "", contact_phone: "", category: "Pendaftaran Anggota", subject: "", message: "" });
     } catch { setSent("Gagal mengirim tiket"); }
   };
+
+  const demoLogin = async (role) => {
+    setBusy(true);
+    setLoginError("");
+    try {
+      const res = await api.post("/auth/demo", { role });
+      setUser(res.data);
+      navigate("/dashboard");
+    } catch {
+      setLoginError("Akun demo cepat belum bisa dibuka. Coba lagi sebentar.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const portal = { ...DEFAULT_PORTAL, ...(data.portal || {}) };
 
   return (
@@ -107,7 +129,13 @@ export default function PublicPortal() {
               <p className="text-sm text-[var(--muted)] mt-3">Gunakan akun Google agar pendaftaran dan proses masuk lebih cepat.</p>
             </div>
             <div data-reveal style={{ "--reveal-delay": "120ms" }}>
-              <LoginPanel installPrompt={installPrompt} onInstall={installApp} />
+              <LoginPanel
+                installPrompt={installPrompt}
+                onInstall={installApp}
+                busy={busy}
+                loginError={loginError}
+                onDemoLogin={demoLogin}
+              />
             </div>
           </div>
         </section>
@@ -176,7 +204,7 @@ export default function PublicPortal() {
   );
 }
 
-function LoginPanel({ installPrompt, onInstall }) {
+function LoginPanel({ installPrompt, onInstall, busy, loginError, onDemoLogin }) {
   return (
     <div className="bg-white border hairline p-5 sm:p-6 lg:p-8 shadow-[0_24px_80px_rgba(11,11,11,0.06)]">
       <div className="mb-6">
@@ -189,11 +217,34 @@ function LoginPanel({ installPrompt, onInstall }) {
 
       <button
         onClick={startGoogleLogin}
-        className="tap w-full btn-primary flex items-center justify-center gap-3 font-semibold text-[15px] mb-3"
+        disabled={busy}
+        className="tap w-full btn-primary flex items-center justify-center gap-3 font-semibold text-[15px] mb-3 disabled:opacity-50"
       >
         <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" className="w-5 h-5 bg-white rounded-sm" />
         Daftar atau masuk dengan Gmail
       </button>
+
+      <div className="my-5 flex items-center gap-3">
+        <div className="h-px flex-1 bg-[var(--line)]" />
+        <span className="mono-label whitespace-nowrap">Akses Demo Cepat</span>
+        <div className="h-px flex-1 bg-[var(--line)]" />
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {DEMO_ROLES.map((role) => (
+          <button
+            key={role}
+            type="button"
+            onClick={() => onDemoLogin(role)}
+            disabled={busy}
+            className="tap btn-outline min-h-12 px-3 flex items-center justify-between gap-2 text-left text-sm font-semibold disabled:opacity-50"
+          >
+            <span>{ROLE_LABELS[role]}</span>
+            <ArrowRight size={15} className="shrink-0" />
+          </button>
+        ))}
+      </div>
+      {loginError && <p className="text-sm text-red-600 mt-3">{loginError}</p>}
 
       {installPrompt && (
         <button onClick={onInstall} className="tap w-full btn-outline flex sm:hidden items-center justify-center gap-2 font-semibold text-[15px] mt-3">

@@ -333,8 +333,6 @@ async def logout(request: Request, response: Response):
 
 @api.post("/auth/demo")
 async def demo_login(body: DemoLogin, response: Response):
-    if os.environ.get("APP_ENV", "local") == "production":
-        raise HTTPException(status_code=404, detail="Not found")
     role = body.role.upper()
     mapping = {
         "NELAYAN": ("nelayan@demo.syncoop.id", "Budi Santoso (Nelayan)"),

@@ -1,18 +1,39 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Anchor, ShieldCheck } from "lucide-react";
-import { API } from "@/lib/api";
+import { Anchor, ArrowRight, ShieldCheck } from "lucide-react";
+import api, { API, ROLE_LABELS } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
 
 function startGoogleLogin() {
   window.location.href = `${API}/auth/google/start?redirect=${encodeURIComponent("/dashboard")}`;
 }
 
+const DEMO_ROLES = ["NELAYAN", "PETUGAS_LAPANG", "ADMIN", "PETUGAS_DINAS"];
+
 export default function Login() {
   const [busy, setBusy] = useState(false);
+  const [loginError, setLoginError] = useState("");
+  const navigate = useNavigate();
+  const { setUser } = useAuth();
 
   const continueWithGoogle = () => {
     setBusy(true);
     startGoogleLogin();
+  };
+
+  const demoLogin = async (role) => {
+    setBusy(true);
+    setLoginError("");
+    try {
+      const res = await api.post("/auth/demo", { role });
+      setUser(res.data);
+      navigate("/dashboard");
+    } catch {
+      setLoginError("Akun demo cepat belum bisa dibuka. Coba lagi sebentar.");
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -66,6 +87,28 @@ export default function Login() {
               <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" className="w-5 h-5 bg-white rounded-sm" />
               {busy ? "Mengalihkan..." : "Daftar atau masuk dengan Gmail"}
             </button>
+
+            <div className="my-6 flex items-center gap-3">
+              <div className="h-px flex-1 bg-[var(--line)]" />
+              <span className="mono-label whitespace-nowrap">Akses Demo Cepat</span>
+              <div className="h-px flex-1 bg-[var(--line)]" />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {DEMO_ROLES.map((role) => (
+                <button
+                  key={role}
+                  type="button"
+                  onClick={() => demoLogin(role)}
+                  disabled={busy}
+                  className="tap btn-outline min-h-12 px-3 flex items-center justify-between gap-2 text-left text-sm font-semibold disabled:opacity-50"
+                >
+                  <span>{ROLE_LABELS[role]}</span>
+                  <ArrowRight size={15} className="shrink-0" />
+                </button>
+              ))}
+            </div>
+            {loginError && <p className="text-sm text-red-600 mt-3">{loginError}</p>}
           </div>
         </motion.div>
       </div>
