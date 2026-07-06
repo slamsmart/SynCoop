@@ -167,18 +167,18 @@ export default function PublicPortal() {
         </section>
 
         <section id="layanan" className="px-4 sm:px-6 lg:px-12 py-10 border-t hairline">
-          <div className="max-w-3xl mx-auto" data-reveal>
-            <div className="flex items-center gap-2 mb-4"><MessageSquareText size={18} /><h2 className="font-bold text-xl">Ajukan Layanan</h2></div>
-            <div className="border hairline p-5 grid grid-cols-1 md:grid-cols-2 gap-3">
-              <input className="field tap px-4" placeholder="Nama" value={form.contact_name} onChange={(e) => setForm({ ...form, contact_name: e.target.value })} />
-              <input className="field tap px-4" placeholder="No. HP" value={form.contact_phone} onChange={(e) => setForm({ ...form, contact_phone: e.target.value })} />
-              <select className="field tap px-4 md:col-span-2" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
+          <div className="max-w-3xl mx-auto">
+            <div className="flex items-center gap-2 mb-4" data-reveal><MessageSquareText size={18} /><h2 className="font-bold text-xl">Ajukan Layanan</h2></div>
+            <div className="border hairline p-5 grid grid-cols-1 md:grid-cols-2 gap-3" data-reveal style={{ "--reveal-delay": "70ms" }}>
+              <input data-reveal style={{ "--reveal-delay": "120ms" }} className="field tap px-4" placeholder="Nama" value={form.contact_name} onChange={(e) => setForm({ ...form, contact_name: e.target.value })} />
+              <input data-reveal style={{ "--reveal-delay": "170ms" }} className="field tap px-4" placeholder="No. HP" value={form.contact_phone} onChange={(e) => setForm({ ...form, contact_phone: e.target.value })} />
+              <select data-reveal style={{ "--reveal-delay": "220ms" }} className="field tap px-4 md:col-span-2" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
                 <option>Pendaftaran Anggota</option><option>Keluhan Warga</option><option>Harga Ikan</option><option>Layanan Koperasi</option>
               </select>
-              <input className="field tap px-4 md:col-span-2" placeholder="Subjek" value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} />
-              <textarea className="field px-4 py-3 md:col-span-2" rows={4} placeholder="Pesan" value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} />
+              <input data-reveal style={{ "--reveal-delay": "270ms" }} className="field tap px-4 md:col-span-2" placeholder="Subjek" value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} />
+              <textarea data-reveal style={{ "--reveal-delay": "320ms" }} className="field px-4 py-3 md:col-span-2" rows={4} placeholder="Pesan" value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} />
               {sent && <p className="text-sm md:col-span-2">{sent}</p>}
-              <button disabled={!form.contact_name || !form.subject || !form.message} onClick={submit} className="tap btn-primary font-semibold md:col-span-2 disabled:opacity-40">Kirim ke Koperasi</button>
+              <button data-reveal style={{ "--reveal-delay": "370ms" }} disabled={!form.contact_name || !form.subject || !form.message} onClick={submit} className="tap btn-primary font-semibold md:col-span-2 disabled:opacity-40">Kirim ke Koperasi</button>
             </div>
           </div>
         </section>
