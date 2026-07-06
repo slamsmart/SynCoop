@@ -82,7 +82,7 @@ export default function Layout() {
       </div>
 
       {/* Sidebar */}
-      <aside className={`${open ? "block" : "hidden"} lg:block lg:w-72 lg:shrink-0 border-r hairline bg-white lg:sticky lg:top-0 lg:h-screen flex-col`}>
+      <aside className={`${open ? "flex" : "hidden"} lg:flex lg:w-72 lg:shrink-0 border-r hairline bg-white lg:sticky lg:top-0 lg:h-screen max-h-[calc(100vh-4rem)] lg:max-h-screen flex-col overflow-hidden`}>
         <div className="hidden lg:flex items-center gap-3 px-6 h-20 border-b hairline">
           <div className="w-9 h-9 bg-[var(--ink)] text-white flex items-center justify-center"><Anchor size={18} /></div>
           <div>
@@ -91,7 +91,7 @@ export default function Layout() {
           </div>
         </div>
 
-        <nav className="px-3 py-5 flex flex-col gap-1">
+        <nav className="px-3 py-5 flex-1 min-h-0 overflow-y-auto flex flex-col gap-1">
           <p className="mono-label px-3 pb-2">Menu</p>
           {menu.map(({ to, label, icon: Icon }) => (
             <NavLink
@@ -114,7 +114,7 @@ export default function Layout() {
           ))}
         </nav>
 
-        <div className="px-3 mt-auto pb-5">
+        <div className="px-3 pt-3 pb-5 border-t hairline shrink-0 bg-white">
           <div className="border hairline p-3 mb-2">
             <div className="text-[13px] font-semibold truncate">{user.name}</div>
             <div className="mono-label truncate">{ROLE_LABELS[user.role]}</div>
